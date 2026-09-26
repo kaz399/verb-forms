@@ -36,25 +36,49 @@ function exampleHTML(v: Verb, key: FormKey): string {
   return renderClues(filled, (clue) => clue);
 }
 
+// On narrow screens the filter and verb rows scroll sideways, so redrawing a row must not
+// throw the learner back to its start.
+function renderRow(id: string, html: string): HTMLElement {
+  const row = byId(id);
+  const left = row.scrollLeft;
+  row.innerHTML = html;
+  row.scrollLeft = left;
+  return row;
+}
+
+/** Scrolls the verb row so that the selected verb is visible, e.g. after opening a card from practice. */
+function revealSelectedChip(): void {
+  const row = byId('chips');
+  const chip = row.querySelector<HTMLElement>('[aria-current="true"]');
+  row.scrollLeft = chip ? chip.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2 : 0;
+}
+
 function renderFilters(): void {
-  byId('filters').innerHTML = FILTERS.map(
-    ([k, label]) => `<button class="pill" data-f="${k}" aria-pressed="${app.filter === k}">${label}</button>`,
-  ).join('');
+  renderRow(
+    'filters',
+    FILTERS.map(
+      ([k, label]) => `<button class="pill" data-f="${k}" aria-pressed="${app.filter === k}">${label}</button>`,
+    ).join(''),
+  );
   document.querySelectorAll<HTMLButtonElement>('#filters .pill').forEach(
     (b) =>
       (b.onclick = () => {
         app.filter = b.dataset.f as Pattern | 'ALL';
         renderFilters();
         renderChips();
+        revealSelectedChip();
       }),
   );
 }
 
 function renderChips(): void {
   const list = VERBS.filter((v) => app.filter === 'ALL' || v.pattern === app.filter);
-  byId('chips').innerHTML = list
-    .map((v) => `<button class="chip" data-v="${v.base}" aria-current="${v.base === app.selected}">${v.base}</button>`)
-    .join('');
+  renderRow(
+    'chips',
+    list
+      .map((v) => `<button class="chip" data-v="${v.base}" aria-current="${v.base === app.selected}">${v.base}</button>`)
+      .join(''),
+  );
   document.querySelectorAll<HTMLButtonElement>('#chips .chip').forEach(
     (b) =>
       (b.onclick = () => {
@@ -100,10 +124,12 @@ export function openCard(base: string): void {
   renderFilters();
   renderChips();
   renderCard();
+  revealSelectedChip();
 }
 
 export function initCard(): void {
   renderFilters();
   renderChips();
   renderCard();
+  revealSelectedChip();
 }
