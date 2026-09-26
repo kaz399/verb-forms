@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>動詞のかたち</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1EE; --paper:#FFFFFF; --ink:#1E2A32; --muted:#5B6770; --line:#CBD5CF; --mark:#FFE36E;
+  --c-base:#1E2A32; --c-s3:#1C78A6; --c-past:#D1344A; --c-pp:#7B4CC4; --c-ing:#23915A;
+  --ok:#23915A; --ng:#D1344A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A1D; --paper:#1D2529; --ink:#E8EEEA; --muted:#9AA7AE; --line:#34413F; --mark:#6B5A12;
+    --c-base:#E8EEEA; --c-s3:#5BB8E6; --c-past:#FF7A8A; --c-pp:#B793F5; --c-ing:#5FD394;
+    --ok:#5FD394; --ng:#FF7A8A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A1D; --paper:#1D2529; --ink:#E8EEEA; --muted:#9AA7AE; --line:#34413F; --mark:#6B5A12;
+  --c-base:#E8EEEA; --c-s3:#5BB8E6; --c-past:#FF7A8A; --c-pp:#B793F5; --c-ing:#5FD394;
+  --ok:#5FD394; --ng:#FF7A8A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Lexend","Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  font-size:16px;line-height:1.7}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--c-s3);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 48px}
+
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{margin:0;font-size:1.35rem;font-weight:700;letter-spacing:.02em;display:flex;gap:2px;align-items:baseline}
+h1 .d{display:inline-block;width:.55em;height:.55em;border-radius:50%;margin-left:3px}
+nav{display:flex;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px}
+nav button{border:0;background:none;padding:6px 14px;border-radius:999px;font-weight:500;font-size:.92rem;color:var(--muted);white-space:nowrap}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.badge{display:inline-block;min-width:1.4em;padding:0 .4em;margin-left:4px;border-radius:999px;background:var(--c-past);color:#fff;font-size:.75rem;line-height:1.4em;text-align:center}
+
+.f-base{--fc:var(--c-base)} .f-s3{--fc:var(--c-s3)} .f-past{--fc:var(--c-past)} .f-pp{--fc:var(--c-pp)} .f-ing{--fc:var(--c-ing)}
+
+/* verb picker */
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pill{border:1px solid var(--line);background:transparent;border-radius:999px;padding:3px 12px;font-size:.85rem}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px}
+.chip{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:2px 10px;font-size:.95rem}
+.chip[aria-current="true"]{border-color:var(--ink);box-shadow:inset 0 -3px 0 var(--ink)}
+
+/* verb card */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px;margin-bottom:6px}
+.big{font-size:clamp(2.6rem,9vw,3.6rem);font-weight:700;line-height:1;letter-spacing:-.01em}
+.meaning{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:1.1rem}
+.ptn{font-size:.85rem;color:var(--muted);margin:4px 0 18px}
+.ptn b{color:var(--ink)}
+.note{font-size:.88rem;background:var(--mark);border-radius:6px;padding:2px 8px;display:inline-block;margin:-8px 0 16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:540px){.grid{grid-template-columns:1fr}}
+.form{border:1px solid var(--line);border-left:6px solid var(--fc);border-radius:12px;padding:12px 14px}
+.form .lab{font-size:.82rem;font-weight:700;color:var(--fc)}
+.form .w{font-size:1.9rem;font-weight:500;line-height:1.2;display:flex;align-items:center;gap:8px;margin:2px 0 6px}
+.chg{color:var(--fc);font-weight:700;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:5px}
+.form .use{font-size:.85rem;color:var(--muted);margin:0 0 6px}
+.form .ex{font-size:.92rem;margin:0}
+.ex .hit{color:var(--fc);font-weight:700}
+.say{border:1px solid var(--line);background:transparent;border-radius:999px;width:32px;height:32px;display:inline-grid;place-items:center;font-size:.9rem;flex:none}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.btn{border:0;border-radius:12px;padding:10px 18px;font-weight:700;background:var(--ink);color:var(--bg)}
+.btn.sub{background:transparent;color:var(--ink);border:1px solid var(--line)}
+
+/* practice */
+.bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:5px 12px;font-size:.85rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.score{font-size:.9rem;color:var(--muted)}
+.q{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:26px 22px}
+.hint{font-size:.9rem;color:var(--muted);margin-bottom:8px}
+.hint b{color:var(--ink);font-size:1.05rem}
+.sent{font-size:clamp(1.3rem,4.5vw,1.7rem);line-height:1.8;margin:0 0 22px}
+.slot{display:inline-block;min-width:4.5em;border-bottom:3px solid var(--ink);text-align:center;margin:0 4px}
+.slot.filled{color:var(--fc);font-weight:700;border-color:var(--fc)}
+.revealed .clue{background:linear-gradient(transparent 55%,var(--mark) 55%);padding:0 2px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.opt{border:2px solid var(--line);background:var(--bg);border-radius:12px;padding:10px;font-size:1.15rem;font-weight:500}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt:disabled{cursor:default;opacity:.55}
+.opt.right{border-color:var(--ok);opacity:1;background:transparent}
+.opt.wrong{border-color:var(--ng);opacity:1;background:transparent;text-decoration:line-through}
+.typing{display:flex;gap:10px}
+.typing input{flex:1;min-width:0;border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--bg);font-size:1.2rem}
+.typing input:focus{border-color:var(--ink);outline:none}
+.fb{margin-top:20px;border-top:1px dashed var(--line);padding-top:18px}
+.verdict{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:1.25rem;margin:0 0 8px}
+.verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
+.fb ul{margin:0 0 6px;padding-left:1.2em}
+.fb li{margin-bottom:6px}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;color:var(--fc);border:1.5px solid var(--fc);border-radius:6px;padding:0 6px;margin:0 2px;line-height:1.5}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+
+/* review */
+.rv{list-style:none;padding:0;margin:0 0 18px;display:grid;gap:8px}
+.rv li{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--fc);border-radius:12px;padding:10px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.rv .w{font-size:1.2rem;font-weight:700;min-width:5.5em}
+.rv .meta{font-size:.85rem;color:var(--muted);flex:1}
+.dots{display:flex;gap:4px}
+.dots i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--fc)}
+.dots i.on{background:var(--fc)}
+.lead{color:var(--muted);font-size:.92rem;margin:0 0 16px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:no-preference){
+  .fb{animation:in .25s ease-out}
+  @keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>動詞のかたち<span class="d" style="background:var(--c-s3)"></span><span class="d" style="background:var(--c-past)"></span><span class="d" style="background:var(--c-pp)"></span><span class="d" style="background:var(--c-ing)"></span></h1>
+    <nav role="tablist">
+      <button role="tab" data-tab="card" aria-selected="true">動詞カード</button>
+      <button role="tab" data-tab="practice" aria-selected="false">文で練習</button>
+      <button role="tab" data-tab="review" aria-selected="false">復習<span class="badge" id="rvCount" hidden></span></button>
+    </nav>
+  </header>
+
+  <section id="tab-card">
+    <div class="filters" id="filters"></div>
+    <div class="chips" id="chips"></div>
+    <div id="cardArea"></div>
+  </section>
+
+  <section id="tab-practice" hidden>
+    <div class="bar">
+      <div class="seg" id="modeSeg">
+        <button data-mode="choose" aria-pressed="true">選んで答える</button>
+        <button data-mode="type" aria-pressed="false">つづりを書く</button>
+      </div>
+      <div class="seg" id="rangeSeg">
+        <button data-range="all" aria-pressed="true">すべての動詞</button>
+        <button data-range="review" aria-pressed="false">復習リスト</button>
+      </div>
+      <div class="score" id="score">正解 0 / 0</div>
+    </div>
+    <div id="qArea"></div>
+  </section>
+
+  <section id="tab-review" hidden>
+    <p class="lead">練習で間違えた形がここにたまります。復習リストから出題して、続けて2回正解するとリストから外れます。</p>
+    <div id="rvArea"></div>
+  </section>
+</div>
+
+<script>
+const KEYS=['base','s3','past','pp','ing'];
+const LABEL={base:'原形',s3:'3単現',past:'過去形',pp:'過去分詞',ing:'ing形'};
+const LABEL_LONG={base:'原形',s3:'3人称単数現在（3単現）',past:'過去形',pp:'過去分詞',ing:'ing形'};
+const USE={
+  s3:'主語が he / she / it など（3人称単数）で、今のこと・いつものこと',
+  past:'昨日・先週など、終わった過去のこと',
+  pp:'have / has ＋ 過去分詞（現在完了）、be動詞 ＋ 過去分詞（受け身）',
+  ing:'be動詞 ＋ ing形 で「〜しているところ」（進行形）'
+};
+// base, s3, past, pp, ing, 意味, 目的語など, 受け身の文, options
+const RAW=[
+ ['play','plays','played','played','playing','（スポーツを）する','tennis','Tennis {{is}} ___ in many countries.'],
+ ['study','studies','studied','studied','studying','勉強する','English','English {{is}} ___ {{by}} many students.'],
+ ['watch','watches','watched','watched','watching','見る','TV'],
+ ['try','tries','tried','tried','trying','ためす','sushi'],
+ ['stop','stops','stopped','stopped','stopping','止める','the car'],
+ ['visit','visits','visited','visited','visiting','訪れる','Kyoto','Kyoto {{is}} ___ {{by}} many people.'],
+ ['cook','cooks','cooked','cooked','cooking','料理する','dinner','Dinner {{was}} ___ {{by}} my father.'],
+ ['use','uses','used','used','using','使う','this computer','This computer {{is}} ___ {{by}} my brother.'],
+ ['clean','cleans','cleaned','cleaned','cleaning','そうじする','the room','The room {{was}} ___ {{by}} Yuki.'],
+ ['carry','carries','carried','carried','carrying','運ぶ','the box'],
+ ['go','goes','went','gone','going','行く','to the park'],
+ ['come','comes','came','come','coming','来る','home'],
+ ['run','runs','ran','run','running','走る','in the park'],
+ ['eat','eats','ate','eaten','eating','食べる','lunch'],
+ ['see','sees','saw','seen','seeing','見る・見える','the stars',null,{noIng:true}],
+ ['make','makes','made','made','making','作る','a cake','This cake {{was}} ___ {{by}} my mother.'],
+ ['take','takes','took','taken','taking','（写真を）撮る','pictures','This picture {{was}} ___ {{by}} my father.'],
+ ['write','writes','wrote','written','writing','書く','a letter','This letter {{was}} ___ {{by}} Ken.'],
+ ['read','reads','read','read','reading','読む','a book','This book {{is}} ___ {{by}} many people.',{note:'過去形・過去分詞の read は「レッド」と発音します。'}],
+ ['buy','buys','bought','bought','buying','買う','a new bag'],
+ ['have','has','had','had','having','持っている・食べる','lunch'],
+ ['speak','speaks','spoke','spoken','speaking','話す','English','English {{is}} ___ in many countries.'],
+ ['swim','swims','swam','swum','swimming','泳ぐ','in the sea'],
+ ['give','gives','gave','given','giving','あげる','flowers to Mika'],
+ ['cut','cuts','cut','cut','cutting','切る','the paper','The paper {{was}} ___ {{by}} Ken.'],
+ ['put','puts','put','put','putting','置く','the book on the desk'],
+ ['teach','teaches','taught','taught','teaching','教える','math','Math {{is}} ___ {{by}} Mr. Sato.'],
+ ['sit','sits','sat','sat','sitting','すわる','on the bench'],
+ ['sing','sings','sang','sung','singing','歌う','a song','This song {{is}} ___ {{by}} many people.'],
+ ['drink','drinks','drank','drunk','drinking','飲む','milk'],
+ ['do','does','did','done','doing','する','the dishes']
+];
+const VERBS=RAW.map(r=>{
+  const v={base:r[0],s3:r[1],past:r[2],pp:r[3],ing:r[4],ja:r[5],obj:r[6],pass:r[7]||null,noIng:!!(r[8]&&r[8].noIng),note:(r[8]&&r[8].note)||''};
+  v.reg=v.past.endsWith('ed');
+  v.ptn=v.reg?'REG':(v.base===v.past&&v.past===v.pp)?'AAA':(v.past===v.pp)?'ABB':(v.base===v.pp)?'ABA':'ABC';
+  return v;
+});
+const BY=Object.fromEntries(VERBS.map(v=>[v.base,v]));
+const PTN={REG:['規則動詞','-ed を付けて過去形・過去分詞を作る'],AAA:['AAA型','原形・過去形・過去分詞が全部同じ'],ABB:['ABB型','過去形と過去分詞が同じ'],ABA:['ABA型','原形と過去分詞が同じ'],ABC:['ABC型','原形・過去形・過去分詞が全部ちがう']};
+
+const S1=['I','We','They','You','My parents'];
+const S3=['He','She','Ken','My sister','Tom'];
+const TIMES=['yesterday','last Sunday','two days ago','last night'];
+const low=s=>['I','Ken','Tom','Mika'].includes(s)?s:s.toLowerCase();
+
+const TEMPLATES=[
+ {key:'base',ok:()=>true,make:(v,p)=>{const s=p(S1);return{text:`{{${s}}} ___ ${v.obj} {{every day}}.`,reason:`主語が「${s}」なので3人称単数ではありません。現在の文でも -s は付けず、原形のままです。`}}},
+ {key:'base',ok:()=>true,make:(v)=>({text:`{{Did}} you ___ ${v.obj} yesterday?`,reason:'Did の疑問文では「過去」の意味を did が受け持つので、動詞は原形にもどります。'})},
+ {key:'base',ok:()=>true,make:(v,p)=>{const s=p(S3);return{text:`{{Does}} ${low(s)} ___ ${v.obj}?`,reason:'Does の疑問文では「3単現」の意味を does が受け持つので、動詞は原形にもどります。'}}},
+ {key:'base',ok:()=>true,make:(v,p)=>{const s=p(S3);return{text:`${s} {{can}} ___ ${v.obj}.`,reason:'can などの助動詞のあとは、いつでも原形です。'}}},
+ {key:'s3',ok:()=>true,make:(v,p)=>{const s=p(S3);return{text:`{{${s}}} ___ ${v.obj} {{every day}}.`,reason:`主語が「${s}」（3人称単数）で、every day は「いつもすること」なので現在形。だから -s（-es）が付きます。`}}},
+ {key:'past',ok:()=>true,make:(v,p)=>{const s=p(S1.concat(S3)),t=p(TIMES);return{text:`${s} ___ ${v.obj} {{${t}}}.`,reason:`「${t}」は過去を表す言葉なので、過去形を使います。`}}},
+ {key:'pp',ok:()=>true,make:(v,p)=>{const [s,aux,adv]=p([['I','have','already'],['Ken','has','just'],['She','has','just'],['We','have','already']]);return{text:`${s} {{${aux}}} ${adv} ___ ${v.obj}.`,reason:`${aux} ＋ 過去分詞で「もう〜した」「ちょうど〜したところ」（現在完了）。have / has のあとは過去分詞です。`}}},
+ {key:'pp',ok:v=>!!v.pass,make:(v)=>({text:v.pass,reason:'be動詞 ＋ 過去分詞で「〜される」「〜された」（受け身）。'})},
+ {key:'ing',ok:v=>!v.noIng,make:(v,p)=>{const [s,be]=p([['I','am'],['He','is'],['They','are'],['My sister','is'],['We','are']]);return{text:`${s} {{${be}}} ___ ${v.obj} {{now}}.`,reason:`be動詞（${be}）＋ ing形で「〜しているところ」（進行形）。now もヒントです。`}}}
+];
+
+const rand=a=>a[Math.floor(Math.random()*a.length)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- storage ----------
+const STORE='verbforms.review.v1';
+let review={};
+try{review=JSON.parse(localStorage.getItem(STORE)||'{}')||{}}catch(e){review={}}
+function saveReview(){try{localStorage.setItem(STORE,JSON.stringify(review))}catch(e){} updateBadge()}
+function updateBadge(){const n=Object.keys(review).length,b=document.getElementById('rvCount');b.hidden=!n;b.textContent=n}
+
+// ---------- speech ----------
+const canSpeak='speechSynthesis' in window;
+function speak(v,key){
+  if(!canSpeak)return;
+  let t=v[key];
+  if(v.base==='read'&&(key==='past'||key==='pp'))t='red';
+  const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.85;
+  speechSynthesis.cancel();speechSynthesis.speak(u);
+}
+
+// ---------- tabs ----------
+let current='card';
+function showTab(t){
+  current=t;
+  document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
+  ['card','practice','review'].forEach(x=>document.getElementById('tab-'+x).hidden=x!==t);
+  if(t==='review')renderReview();
+  if(t==='practice'&&!state.q)nextQ();
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+// ---------- card ----------
+let filter='ALL',selected='go';
+function diffWord(base,w){
+  let i=0;while(i<base.length&&i<w.length&&base[i]===w[i])i++;
+  if(i===w.length&&w.length===base.length)return `<span>${esc(w)}</span><span class="chg" style="text-decoration-style:dotted">＝</span>`;
+  return `<span>${esc(w.slice(0,i))}</span><span class="chg">${esc(w.slice(i))}</span>`;
+}
+function fillSentence(text,word){
+  return esc(text).replace('___',`<span class="hit">${esc(word)}</span>`).replace(/\{\{(.+?)\}\}/g,'$1');
+}
+function example(v,key){
+  const pick=a=>a[Math.min(1,a.length-1)];
+  const tpl=TEMPLATES.filter(t=>t.key===key&&t.ok(v));
+  const t=key==='base'?tpl[0]:tpl.find(x=>x!==TEMPLATES[7])||tpl[0];
+  if(!t)return '';
+  return fillSentence(t.make(v,pick).text,v[key]);
+}
+function renderFilters(){
+  const opts=[['ALL','すべて'],['REG','規則'],['AAA','AAA型'],['ABB','ABB型'],['ABA','ABA型'],['ABC','ABC型']];
+  document.getElementById('filters').innerHTML=opts.map(([k,l])=>`<button class="pill" data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join('');
+  document.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{filter=b.dataset.f;renderFilters();renderChips()});
+}
+function renderChips(){
+  const list=VERBS.filter(v=>filter==='ALL'||v.ptn===filter);
+  document.getElementById('chips').innerHTML=list.map(v=>`<button class="chip" data-v="${v.base}" aria-current="${v.base===selected}">${v.base}</button>`).join('');
+  document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.v;renderChips();renderCard()});
+}
+function renderCard(){
+  const v=BY[selected];
+  const sayBtn=k=>canSpeak?`<button class="say" data-say="${k}" aria-label="${LABEL[k]}を読み上げる">🔊</button>`:'';
+  const forms=['s3','past','pp','ing'].map(k=>`
+    <div class="form f-${k}">
+      <div class="lab">${LABEL_LONG[k]}</div>
+      <div class="w">${diffWord(v.base,v[k])}${sayBtn(k)}</div>
+      <p class="use">${USE[k]}</p>
+      <p class="ex">${example(v,k)}</p>
+    </div>`).join('');
+  document.getElementById('cardArea').innerHTML=`
+    <article class="card">
+      <div class="head"><span class="big">${v.base}</span>${sayBtn('base')}<span class="meaning">${esc(v.ja)}</span></div>
+      <p class="ptn"><b>${PTN[v.ptn][0]}</b>：${PTN[v.ptn][1]}　（${v.base} ／ ${v.past} ／ ${v.pp}）</p>
+      ${v.note?`<p class="note">${esc(v.note)}</p>`:''}
+      <div class="grid">${forms}</div>
+      <div class="actions"><button class="btn" id="drillThis">この動詞で練習する</button></div>
+    </article>`;
+  document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>speak(v,b.dataset.say));
+  document.getElementById('drillThis').onclick=()=>{state.only=v.base;state.range='all';syncSeg();state.q=null;showTab('practice')};
+}
+
+// ---------- practice ----------
+const state={mode:'choose',range:'all',only:null,q:null,answered:false,right:0,total:0};
+function syncSeg(){
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===state.mode));
+  document.querySelectorAll('#rangeSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.range===state.range));
+}
+document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;syncSeg();if(!state.answered)renderQ()});
+document.querySelectorAll('#rangeSeg button').forEach(b=>b.onclick=()=>{state.range=b.dataset.range;state.only=null;syncSeg();nextQ()});
+
+function makeQ(v,key){
+  const tpl=rand(TEMPLATES.filter(t=>t.key===key&&t.ok(v)));
+  const m=tpl.make(v,rand);
+  return {v,key,text:m.text,reason:m.reason};
+}
+function nextQ(){
+  state.answered=false;
+  if(state.range==='review'){
+    const items=Object.values(review);
+    if(!items.length){state.q=null;renderQ();return}
+    const it=rand(items);state.q=makeQ(BY[it.base],it.key);
+  }else{
+    const v=state.only?BY[state.only]:rand(VERBS);
+    const keys=KEYS.filter(k=>TEMPLATES.some(t=>t.key===k&&t.ok(v)));
+    state.q=makeQ(v,rand(keys));
+  }
+  renderQ();
+}
+function sentenceHTML(q,filled){
+  const [a,b]=q.text.split('___');
+  const clue=s=>esc(s).replace(/\{\{(.+?)\}\}/g,'<span class="clue">$1</span>');
+  const slot=filled?`<span class="slot filled f-${q.key}">${esc(q.v[q.key])}</span>`:'<span class="slot" aria-label="空欄">&nbsp;</span>';
+  return clue(a)+slot+clue(b);
+}
+function renderQ(){
+  const area=document.getElementById('qArea');
+  document.getElementById('score').textContent=`正解 ${state.right} / ${state.total}`;
+  if(!state.q){
+    area.innerHTML=`<div class="q empty">復習リストは空です。<br>「すべての動詞」で練習して、間違えた形がここから出題されます。</div>`;return;
+  }
+  const q=state.q,v=q.v;
+  const onlyNote=state.only?`　<button class="pill" id="clearOnly">${v.base} だけ練習中・解除</button>`:'';
+  let input='';
+  if(state.mode==='choose'){
+    const words=[...new Set(KEYS.map(k=>v[k]))].sort(()=>Math.random()-.5);
+    input=`<div class="opts">${words.map(w=>`<button class="opt" data-w="${w}">${w}</button>`).join('')}</div>`;
+  }else{
+    input=`<div class="typing"><input id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="空欄に入る形を書く" aria-label="答え"><button class="btn" id="submit">答える</button></div>`;
+  }
+  area.innerHTML=`
+    <div class="q" id="qbox">
+      <div class="hint">動詞：<b>${v.base}</b>（${esc(v.ja)}）${onlyNote}</div>
+      <p class="sent" id="sent">${sentenceHTML(q,false)}</p>
+      ${input}
+      <div id="fb"></div>
+    </div>`;
+  if(state.only)document.getElementById('clearOnly').onclick=()=>{state.only=null;nextQ()};
+  if(state.mode==='choose'){
+    area.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(b.dataset.w));
+  }else{
+    const inp=document.getElementById('ans');inp.focus();
+    inp.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();answer(inp.value)}};
+    document.getElementById('submit').onclick=()=>answer(inp.value);
+  }
+}
+
+// ---------- diagnosis ----------
+const consY=b=>/[^aeiou]y$/.test(b);
+const naiveEd=b=>b.endsWith('e')?b+'d':b+'ed';
+function tag(k){return `<span class="tag f-${k}">${LABEL[k]}</span>`}
+function diagnose(v,key,raw){
+  const a=raw.trim().toLowerCase().replace(/\s+/g,' ');
+  const c=v[key],b=v.base;
+  if(a===c)return{ok:true};
+  const other=KEYS.find(k=>k!==key&&v[k]===a);
+  if(other){
+    let tip='';
+    if(key==='past'&&other==='pp')tip=`過去分詞は have や be動詞 とセットで使う形で、1語だけで過去を表すことはできません。${b} の過去形は <b>${v.past}</b>、過去分詞は <b>${v.pp}</b> です。`;
+    else if(key==='pp'&&other==='past')tip=`have / has や be動詞 のあとは、過去形ではなく過去分詞です。${b} の過去分詞は <b>${v.pp}</b> です。`;
+    else if(key==='s3'&&other==='base')tip='主語が3人称単数で現在の文のときは、-s を忘れずに付けます。';
+    else if(key==='base'&&other==='s3')tip='-s を付けるのは、主語が3人称単数で、ふつうの現在の文のときだけです。';
+    else if(key==='base'&&other==='past')tip='did や can があるときは、動詞は形を変えずに原形を使います。';
+    else if(key==='ing')tip='be動詞のあとで「〜している」を表すのは ing形 です。';
+    else if(key==='past')tip='過去の文なので、過去形に変える必要があります。';
+    return{ok:false,msg:`「${esc(a)}」は ${b} の${tag(other)}です。この文では${tag(key)}を使います。`,tip};
+  }
+  if((key==='past'||key==='pp')&&!v.reg&&(a.endsWith('ed')||a===b+'d'))
+    return{ok:false,msg:`${b} は<b>不規則動詞</b>なので -ed は付きません。${tag(key)}は <b>${c}</b> です。`,tip:`${PTN[v.ptn][0]}（${PTN[v.ptn][1]}）の仲間として覚えましょう。`};
+  if((key==='past'||key==='pp')&&(a===b+'ed'||a===naiveEd(b)))
+    return consY(b)
+      ?{ok:false,msg:`「子音字＋y」で終わる動詞は、y を i に変えて -ed。正しくは <b>${c}</b> です。`}
+      :{ok:false,msg:`「短い母音＋子音字1つ」で終わる動詞は、最後の文字を重ねて -ed。正しくは <b>${c}</b> です。`};
+  if(key==='ing'&&a===b+'ing')
+    return b.endsWith('e')
+      ?{ok:false,msg:`e で終わる動詞は、e を取ってから -ing。正しくは <b>${c}</b> です。`}
+      :{ok:false,msg:`「短い母音＋子音字1つ」で終わる動詞は、最後の文字を重ねて -ing。正しくは <b>${c}</b> です。`};
+  if(key==='s3'&&(a===b+'s'||a===b+'es')){
+    if(consY(b))return{ok:false,msg:`「子音字＋y」で終わる動詞は、y を i に変えて -es。正しくは <b>${c}</b> です。`};
+    if(/(s|sh|ch|x|o)$/.test(b))return{ok:false,msg:`s・sh・ch・x・o で終わる動詞は -es を付けます。正しくは <b>${c}</b> です。`};
+    return{ok:false,msg:`${b} の3単現は特別な形で <b>${c}</b> です。`};
+  }
+  return{ok:false,msg:`正しくは <b>${c}</b> です。つづりをもう一度確かめましょう。`};
+}
+
+function answer(raw){
+  if(state.answered)return;
+  if(!raw.trim()){const i=document.getElementById('ans');if(i)i.focus();return}
+  state.answered=true;
+  const q=state.q,v=q.v,res=diagnose(v,q.key,raw);
+  state.total++;if(res.ok)state.right++;
+  document.getElementById('score').textContent=`正解 ${state.right} / ${state.total}`;
+  const id=v.base+'|'+q.key;
+  let rvNote='';
+  if(res.ok){
+    if(review[id]){review[id].streak++;
+      if(review[id].streak>=2){delete review[id];rvNote='続けて2回正解したので、復習リストから外しました。'}
+      else rvNote='復習リストの問題です。あと1回正解でリストから外れます。';
+      saveReview();}
+  }else{
+    review[id]={base:v.base,key:q.key,miss:(review[id]?review[id].miss:0)+1,streak:0,t:Date.now()};
+    saveReview();rvNote='この形を復習リストに入れました。';
+  }
+  const sent=document.getElementById('sent');sent.innerHTML=sentenceHTML(q,true);sent.classList.add('revealed');
+  document.querySelectorAll('.opt').forEach(b=>{b.disabled=true;if(b.dataset.w===v[q.key])b.classList.add('right');else if(b.dataset.w===raw)b.classList.add('wrong')});
+  const inp=document.getElementById('ans');if(inp)inp.disabled=true;
+  const sub=document.getElementById('submit');if(sub)sub.disabled=true;
+  const items=[];
+  if(!res.ok)items.push(res.msg);
+  if(res.tip)items.push(res.tip);
+  items.push(`<span style="color:var(--muted)">この文のヒント：</span>${q.reason}`);
+  document.getElementById('fb').innerHTML=`
+    <div class="fb">
+      <p class="verdict ${res.ok?'ok':'ng'}">${res.ok?'正解！':'おしい！'}　${tag(q.key)} <b class="f-${q.key}" style="color:var(--fc)">${v[q.key]}</b></p>
+      <ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>
+      ${rvNote?`<p class="score" style="margin:0">${rvNote}</p>`:''}
+      <div class="actions">
+        <button class="btn" id="next">次の問題</button>
+        <button class="btn sub" id="toCard">${v.base} のカードを見る</button>
+      </div>
+    </div>`;
+  const nx=document.getElementById('next');nx.focus();nx.onclick=nextQ;
+  document.getElementById('toCard').onclick=()=>{selected=v.base;filter='ALL';renderFilters();renderChips();renderCard();showTab('card')};
+}
+
+// ---------- review ----------
+function renderReview(){
+  const area=document.getElementById('rvArea');
+  const items=Object.values(review).sort((a,b)=>b.miss-a.miss||b.t-a.t);
+  if(!items.length){area.innerHTML='<div class="empty">まだ間違えた問題はありません。「文で練習」で間違えると、ここに追加されます。</div>';return}
+  area.innerHTML=`
+    <ul class="rv">${items.map(it=>{const v=BY[it.base];return `
+      <li class="f-${it.key}">
+        <span class="w">${v[it.key]}</span>
+        ${tag(it.key)}
+        <span class="meta">${v.base}（${esc(v.ja)}）・まちがえた回数 ${it.miss}</span>
+        <span class="dots" aria-label="連続正解 ${it.streak} / 2"><i class="${it.streak>=1?'on':''}"></i><i></i></span>
+      </li>`}).join('')}</ul>
+    <div class="actions">
+      <button class="btn" id="startRv">復習を始める</button>
+      <button class="btn sub" id="clearRv">リストを空にする</button>
+    </div>`;
+  document.getElementById('startRv').onclick=()=>{state.range='review';state.only=null;syncSeg();nextQ();showTab('practice')};
+  document.getElementById('clearRv').onclick=()=>{if(confirm('復習リストを空にしますか？')){review={};saveReview();renderReview()}};
+}
+
+document.addEventListener('keydown',e=>{
+  if(current==='practice'&&state.answered&&e.key==='Enter'&&document.activeElement.id!=='next'){e.preventDefault();nextQ()}
+});
+
+renderFilters();renderChips();renderCard();updateBadge();
+</script>
+</body>
+</html>

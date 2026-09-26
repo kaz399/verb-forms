@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>動詞のかたち</title>
+<meta name="description" content="中学英語の動詞の5つの形を覚えるアプリ">
+<meta name="theme-color" content="#EDF1EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141A1D" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-title" content="動詞のかたち">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>動詞のかたち<span class="d" style="background:var(--c-s3)"></span><span class="d" style="background:var(--c-past)"></span><span class="d" style="background:var(--c-pp)"></span><span class="d" style="background:var(--c-ing)"></span></h1>
+    <nav role="tablist">
+      <button role="tab" data-tab="card" aria-selected="true">動詞カード</button>
+      <button role="tab" data-tab="practice" aria-selected="false">文で練習</button>
+      <button role="tab" data-tab="review" aria-selected="false">復習<span class="badge" id="rvCount" hidden></span></button>
+    </nav>
+  </header>
+
+  <section id="tab-card">
+    <div class="filters" id="filters"></div>
+    <div class="chips" id="chips"></div>
+    <div id="cardArea"></div>
+  </section>
+
+  <section id="tab-practice" hidden>
+    <div class="bar">
+      <div class="seg" id="modeSeg">
+        <button data-mode="choose" aria-pressed="true">選んで答える</button>
+        <button data-mode="type" aria-pressed="false">つづりを書く</button>
+      </div>
+      <div class="seg" id="rangeSeg">
+        <button data-range="all" aria-pressed="true">すべての動詞</button>
+        <button data-range="review" aria-pressed="false">復習リスト</button>
+      </div>
+      <div class="score" id="score">正解 0 / 0</div>
+    </div>
+    <div id="qArea"></div>
+  </section>
+
+  <section id="tab-review" hidden>
+    <p class="lead">練習で間違えた形がここにたまります。復習リストから出題して、続けて2回正解するとリストから外れます。</p>
+    <div id="rvArea"></div>
+  </section>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
