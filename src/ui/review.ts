@@ -7,6 +7,7 @@ import { dueItems, MASTERED_BOX, REVIEW_INTERVALS_DAYS, upcomingItems, type Revi
 import { app, setReview } from './app';
 import { byId, esc, formTag } from './html';
 import { inDaysLabel, startPractice } from './practice';
+import { progressHTML } from './progress';
 
 const intervalLabel = (days: number) => (days === 1 ? '翌日' : `${days}日後`);
 
@@ -39,13 +40,16 @@ function itemsHTML(items: readonly ReviewItem[], meta: (it: ReviewItem) => strin
 }
 
 export function renderReview(): void {
-  byId('rvLead').textContent = LEAD;
   const area = byId('rvArea');
   const today = localDate(Date.now());
   const due = dueItems(app.review, today);
   const upcoming = upcomingItems(app.review, today);
   if (!due.length && !upcoming.length) {
-    area.innerHTML = '<div class="empty">まだ間違えた問題はありません。「文で練習」で間違えると、ここに追加されます。</div>';
+    area.innerHTML = `
+      ${progressHTML()}
+      <h2 class="rv-h">今日の復習</h2>
+      <p class="lead">${LEAD}</p>
+      <div class="empty">まだ間違えた問題はありません。「文で練習」で間違えると、ここに追加されます。</div>`;
     return;
   }
   const dueSection = due.length
@@ -58,8 +62,10 @@ export function renderReview(): void {
     : '';
   const mastered = Object.values(app.review).filter((it) => it.box === MASTERED_BOX).length;
   area.innerHTML = `
-    <p class="lead">復習リスト ${due.length + upcoming.length}個・そのうち定着 ${mastered}個</p>
+    ${progressHTML()}
     <h2 class="rv-h">今日の復習</h2>
+    <p class="lead">${LEAD}</p>
+    <p class="lead">復習リスト ${due.length + upcoming.length}個・そのうち定着 ${mastered}個</p>
     ${dueSection}
     ${upcomingSection}
     <div class="actions"><button class="btn sub" id="clearRv">リストを空にする</button></div>`;

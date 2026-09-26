@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Diagnosis } from './diagnose';
 import {
+  accuracyPercent,
   countMistakes,
+  MIN_ANSWERS_FOR_RATE,
   dailyTotals,
   mistakeId,
   parseStatsData,
@@ -132,6 +134,19 @@ describe('queries', () => {
   it('return zero for a period without data', () => {
     expect(tallyAnswers({}, current)).toEqual({ total: 0, correct: 0 });
     expect(countMistakes({}, current)).toEqual({});
+  });
+});
+
+describe('accuracyPercent', () => {
+  it(`is null below ${MIN_ANSWERS_FOR_RATE} answers`, () => {
+    expect(accuracyPercent({ total: MIN_ANSWERS_FOR_RATE - 1, correct: MIN_ANSWERS_FOR_RATE - 1 })).toBeNull();
+    expect(accuracyPercent({ total: 0, correct: 0 })).toBeNull();
+  });
+
+  it(`is a rounded percentage from ${MIN_ANSWERS_FOR_RATE} answers`, () => {
+    expect(accuracyPercent({ total: MIN_ANSWERS_FOR_RATE, correct: 3 })).toBe(60);
+    expect(accuracyPercent({ total: 6, correct: 5 })).toBe(83);
+    expect(accuracyPercent({ total: 7, correct: 0 })).toBe(0);
   });
 });
 

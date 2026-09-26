@@ -100,6 +100,14 @@ export function tallyAnswers(stats: Stats, period: Period, include: (c: AnswerCe
   return sum;
 }
 
+/** Below this many answers a rate swings too much to compare. */
+export const MIN_ANSWERS_FOR_RATE = 5;
+
+/** Percentage of correct answers rounded to an integer, or null when there are too few answers. */
+export function accuracyPercent(t: Tally): number | null {
+  return t.total >= MIN_ANSWERS_FOR_RATE ? Math.round((t.correct / t.total) * 100) : null;
+}
+
 export function countMistakes(stats: Stats, period: Period): Record<string, number> {
   const sum: Record<string, number> = {};
   for (const day of daysIn(stats, period)) {
