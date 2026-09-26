@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Yabe Kazuhiro
 
+import type { Sentence, TemplateId } from './templates';
+
 export const FORM_KEYS = ['base', 's3', 'past', 'pp', 'ing'] as const;
 export type FormKey = (typeof FORM_KEYS)[number];
 
@@ -44,16 +46,19 @@ export type Verb = Record<FormKey, string> & {
   obj: string;
   /** Passive-voice sentence with `___` for the past participle, if the verb reads naturally in one. */
   passive: string | null;
-  /** True when the verb is rarely used in the progressive form (e.g. "see"). */
-  noIng: boolean;
+  /**
+   * Sentences that replace a template for this verb, or null to never use that template,
+   * for verbs that the shared templates make unnatural (e.g. "I know the answer every day.").
+   */
+  sentences: Partial<Record<TemplateId, Sentence | null>>;
   /** Extra note shown on the verb card. */
   note: string;
   regular: boolean;
   pattern: Pattern;
 };
 
-export type VerbSource = Omit<Verb, 'regular' | 'pattern' | 'passive' | 'noIng' | 'note'> &
-  Partial<Pick<Verb, 'passive' | 'noIng' | 'note'>>;
+export type VerbSource = Omit<Verb, 'regular' | 'pattern' | 'passive' | 'sentences' | 'note'> &
+  Partial<Pick<Verb, 'passive' | 'sentences' | 'note'>>;
 
 export function classifyPattern(v: Record<'base' | 'past' | 'pp', string>): Pattern {
   if (v.past.endsWith('ed')) return 'REG';
@@ -68,7 +73,7 @@ export function buildVerb(src: VerbSource): Verb {
   return {
     ...src,
     passive: src.passive ?? null,
-    noIng: src.noIng ?? false,
+    sentences: src.sentences ?? {},
     note: src.note ?? '',
     regular: pattern === 'REG',
     pattern,

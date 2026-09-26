@@ -12,8 +12,19 @@ export type Picker = <T>(items: readonly T[]) => T;
  */
 export type Sentence = { text: string; reason: string };
 
+export type TemplateId =
+  | 'base-present'
+  | 'base-did-question'
+  | 'base-does-question'
+  | 'base-can'
+  | 's3-present'
+  | 'past-time'
+  | 'pp-perfect'
+  | 'pp-passive'
+  | 'ing-progressive';
+
 export type Template = {
-  id: string;
+  id: TemplateId;
   key: FormKey;
   applies: (v: Verb) => boolean;
   make: (v: Verb, pick: Picker) => Sentence;
@@ -140,7 +151,7 @@ export const TEMPLATES: readonly Template[] = [
   {
     id: 'ing-progressive',
     key: 'ing',
-    applies: (v) => !v.noIng,
+    applies: always,
     make: (v, pick) => {
       const [s, be] = pick(PROGRESSIVE_SUBJECTS);
       return {
@@ -151,6 +162,12 @@ export const TEMPLATES: readonly Template[] = [
   },
 ];
 
+/** Templates that can ask `key` of `v`, with the verb's own sentences in place of the shared ones. */
 export function templatesFor(v: Verb, key: FormKey): Template[] {
-  return TEMPLATES.filter((t) => t.key === key && t.applies(v));
+  return TEMPLATES.flatMap((t) => {
+    if (t.key !== key || !t.applies(v)) return [];
+    const own = v.sentences[t.id];
+    if (own === null) return [];
+    return [own ? { ...t, make: () => own } : t];
+  });
 }

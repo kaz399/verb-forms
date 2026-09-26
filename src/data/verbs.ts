@@ -3,7 +3,7 @@
 
 import { buildVerb, type Verb, type VerbSource } from '../logic/forms';
 
-// In `passive`, `___` is the blank for the past participle and `{{...}}` marks a clue word.
+// In `passive` and `sentences`, `___` is the blank and `{{...}}` marks a clue word that tells which form to use.
 const SOURCES: VerbSource[] = [
   { base: 'play', s3: 'plays', past: 'played', pp: 'played', ing: 'playing', ja: '（スポーツを）する', obj: 'tennis', passive: 'Tennis {{is}} ___ in many countries.' },
   { base: 'study', s3: 'studies', past: 'studied', pp: 'studied', ing: 'studying', ja: '勉強する', obj: 'English', passive: 'English {{is}} ___ {{by}} many students.' },
@@ -19,7 +19,7 @@ const SOURCES: VerbSource[] = [
   { base: 'come', s3: 'comes', past: 'came', pp: 'come', ing: 'coming', ja: '来る', obj: 'home' },
   { base: 'run', s3: 'runs', past: 'ran', pp: 'run', ing: 'running', ja: '走る', obj: 'in the park' },
   { base: 'eat', s3: 'eats', past: 'ate', pp: 'eaten', ing: 'eating', ja: '食べる', obj: 'lunch' },
-  { base: 'see', s3: 'sees', past: 'saw', pp: 'seen', ing: 'seeing', ja: '見る・見える', obj: 'the stars', noIng: true },
+  { base: 'see', s3: 'sees', past: 'saw', pp: 'seen', ing: 'seeing', ja: '見る・見える', obj: 'the stars', sentences: { 'ing-progressive': null } },
   { base: 'make', s3: 'makes', past: 'made', pp: 'made', ing: 'making', ja: '作る', obj: 'a cake', passive: 'This cake {{was}} ___ {{by}} my mother.' },
   { base: 'take', s3: 'takes', past: 'took', pp: 'taken', ing: 'taking', ja: '（写真を）撮る', obj: 'pictures', passive: 'This picture {{was}} ___ {{by}} my father.' },
   { base: 'write', s3: 'writes', past: 'wrote', pp: 'written', ing: 'writing', ja: '書く', obj: 'a letter', passive: 'This letter {{was}} ___ {{by}} Ken.' },

@@ -17,7 +17,7 @@ describe('buildVerb', () => {
   const src = { base: 'go', s3: 'goes', past: 'went', pp: 'gone', ing: 'going', ja: '行く', obj: 'home' };
 
   it('fills optional fields with defaults', () => {
-    expect(buildVerb(src)).toMatchObject({ passive: null, noIng: false, note: '' });
+    expect(buildVerb(src)).toMatchObject({ passive: null, sentences: {}, note: '' });
   });
 
   it('marks only -ed verbs as regular', () => {

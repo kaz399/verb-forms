@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { VERB_BY_BASE, VERBS } from '../data/verbs';
-import { FORM_KEYS } from './forms';
+import { buildVerb, FORM_KEYS } from './forms';
 import { askableKeys, choiceOptions, exampleSentence, makeQuestion, nextQuestion, shuffle } from './question';
 import { templatesFor, type Picker } from './templates';
 
@@ -8,17 +8,61 @@ const verb = (base: string) => VERB_BY_BASE.get(base)!;
 const first: Picker = (items) => items[0]!;
 const last: Picker = (items) => items.at(-1)!;
 
-describe('sentence templates', () => {
-  it('produce exactly one blank for every verb, form and choice', () => {
-    for (const v of VERBS) {
-      for (const key of FORM_KEYS) {
-        for (const t of templatesFor(v, key)) {
-          for (const pick of [first, last]) {
-            expect(t.make(v, pick).text.split('___'), `${t.id} / ${v.base}`).toHaveLength(2);
-          }
-        }
-      }
-    }
+/** Every sentence any verb can produce, with each of the given pickers. */
+function allSentences(pickers: Picker[] = [first, last]) {
+  return VERBS.flatMap((v) =>
+    FORM_KEYS.flatMap((key) =>
+      templatesFor(v, key).flatMap((t) =>
+        pickers.map((pick) => ({ label: `${t.id} / ${v.base}`, ...t.make(v, pick) })),
+      ),
+    ),
+  );
+}
+
+describe('sentences of all verbs', () => {
+  it('have exactly one blank', () => {
+    for (const s of allSentences()) expect(s.text.split('___'), s.label).toHaveLength(2);
+  });
+
+  it('mark at least one clue word that tells which form to use', () => {
+    for (const s of allSentences()) expect(s.text, s.label).toMatch(/\{\{.+?\}\}/);
+  });
+
+  it('have an explanation', () => {
+    for (const s of allSentences()) expect(s.reason, s.label).not.toBe('');
+  });
+
+  // The ing form alone may be left out, for verbs that are not used in the progressive.
+  it.each(VERBS.map((v) => [v.base, v] as const))('%s can be asked in its base, s3, past and pp forms', (_, v) => {
+    expect(askableKeys(v)).toEqual(expect.arrayContaining(['base', 's3', 'past', 'pp']));
+  });
+});
+
+describe('templatesFor', () => {
+  const src = { base: 'know', s3: 'knows', past: 'knew', pp: 'known', ing: 'knowing', ja: '知っている', obj: 'the answer' };
+  const own = { text: '{{Ken}} ___ the answer.', reason: 'a state now' };
+
+  it('uses the verb\'s own sentence in place of a template', () => {
+    const v = buildVerb({ ...src, sentences: { 's3-present': own } });
+    const [t] = templatesFor(v, 's3');
+    expect(t?.id).toBe('s3-present');
+    expect(t?.make(v, first)).toEqual(own);
+  });
+
+  it('leaves out a template set to null', () => {
+    const v = buildVerb({ ...src, sentences: { 'ing-progressive': null, 'base-present': null } });
+    expect(templatesFor(v, 'ing')).toEqual([]);
+    expect(templatesFor(v, 'base').map((t) => t.id)).not.toContain('base-present');
+  });
+
+  it('uses the shared templates when the verb has no sentences of its own', () => {
+    const v = buildVerb(src);
+    expect(templatesFor(v, 'base').map((t) => t.id)).toEqual([
+      'base-present',
+      'base-did-question',
+      'base-does-question',
+      'base-can',
+    ]);
   });
 });
 
