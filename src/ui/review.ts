@@ -3,21 +3,24 @@
 
 import { VERB_BY_BASE } from '../data/verbs';
 import { daysBetween, localDate } from '../logic/date';
-import { BOX_COUNT, dueItems, REVIEW_INTERVALS_DAYS, upcomingItems, type ReviewItem } from '../logic/review';
+import { dueItems, MASTERED_BOX, REVIEW_INTERVALS_DAYS, upcomingItems, type ReviewItem } from '../logic/review';
 import { app, setReview } from './app';
 import { byId, esc, formTag } from './html';
 import { inDaysLabel, startPractice } from './practice';
 
 const intervalLabel = (days: number) => (days === 1 ? '翌日' : `${days}日後`);
 
+const STEPS_TO_MASTER = MASTERED_BOX - 1;
+const RECHECK_DAYS = REVIEW_INTERVALS_DAYS[REVIEW_INTERVALS_DAYS.length - 1];
+
 const LEAD =
   '練習で間違えた形がここにたまります。' +
-  `間違えた日のうちにもう一度、そのあと${REVIEW_INTERVALS_DAYS.map(intervalLabel).join('・')}と間をあけて出題し、` +
-  `${BOX_COUNT}回続けて正解すると「覚えた」になってリストから外れます。`;
+  `間違えた日のうちにもう一度、そのあと${REVIEW_INTERVALS_DAYS.map(intervalLabel).join('・')}と間をあけて出題します。` +
+  `${STEPS_TO_MASTER}回続けて正解すると「定着」になり、そのあとも${RECHECK_DAYS}日ごとに確かめます。`;
 
 function itemsHTML(items: readonly ReviewItem[], meta: (it: ReviewItem) => string): string {
   const dots = (box: number) =>
-    Array.from({ length: BOX_COUNT }, (_, i) => `<i class="${i < box - 1 ? 'on' : ''}"></i>`).join('');
+    Array.from({ length: STEPS_TO_MASTER }, (_, i) => `<i class="${i < box - 1 ? 'on' : ''}"></i>`).join('');
   return `<ul class="rv">${items
     .flatMap((it) => {
       const v = VERB_BY_BASE.get(it.base);
@@ -28,7 +31,7 @@ function itemsHTML(items: readonly ReviewItem[], meta: (it: ReviewItem) => strin
         <span class="w">${v[it.key]}</span>
         ${formTag(it.key)}
         <span class="meta">${v.base}（${esc(v.ja)}）・${meta(it)}</span>
-        <span class="dots" aria-label="${BOX_COUNT}回中 ${it.box - 1}回正解">${dots(it.box)}</span>
+        <span class="dots" aria-label="${STEPS_TO_MASTER}回中 ${it.box - 1}回正解">${dots(it.box)}</span>
       </li>`,
       ];
     })
@@ -51,9 +54,11 @@ export function renderReview(): void {
     : '<p class="lead">今日の復習はおわりです。</p>';
   const upcomingSection = upcoming.length
     ? `<h2 class="rv-h">これからの復習</h2>
-      ${itemsHTML(upcoming, (it) => inDaysLabel(daysBetween(today, it.due)))}`
+      ${itemsHTML(upcoming, (it) => `${inDaysLabel(daysBetween(today, it.due))}${it.box === MASTERED_BOX ? '・定着' : ''}`)}`
     : '';
+  const mastered = Object.values(app.review).filter((it) => it.box === MASTERED_BOX).length;
   area.innerHTML = `
+    <p class="lead">復習リスト ${due.length + upcoming.length}個・そのうち定着 ${mastered}個</p>
     <h2 class="rv-h">今日の復習</h2>
     ${dueSection}
     ${upcomingSection}

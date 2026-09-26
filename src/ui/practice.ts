@@ -11,7 +11,7 @@ import {
   type QuestionSource,
 } from '../logic/question';
 import { daysBetween, localDate } from '../logic/date';
-import { dueItems, recordAnswer, upcomingItems, type ReviewChange } from '../logic/review';
+import { dueItems, MASTERED_BOX, recordAnswer, upcomingItems, type ReviewChange } from '../logic/review';
 import { app, setReview, type PracticeState } from './app';
 import { openCard } from './card';
 import { explainMistake } from './feedback';
@@ -23,9 +23,9 @@ function reviewNote(change: ReviewChange): string {
     case 'added':
       return 'この形を復習リストに入れました。今日のうちにもう一度出ます。';
     case 'advanced':
-      return `復習リストの問題です。次は${inDaysLabel(change.inDays)}に出ます。`;
-    case 'cleared':
-      return 'この形は「覚えた」になりました。復習リストから外します。';
+      return change.box === MASTERED_BOX
+        ? `この形は「定着」しています。次は${inDaysLabel(change.inDays)}にもう一度確かめます。`
+        : `復習リストの問題です。次は${inDaysLabel(change.inDays)}に出ます。`;
     case 'not-due':
     case 'none':
       return '';

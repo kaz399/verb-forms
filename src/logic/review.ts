@@ -6,15 +6,16 @@ import { FORM_KEYS, type FormKey } from './forms';
 
 /**
  * Days until the next review after a correct answer in box 1, 2, 3, ...
- * A correct answer in the box after the last interval clears the item as learned.
+ * Items are never removed: the top box (MASTERED_BOX) keeps repeating the last interval,
+ * so that learned forms are checked again and a miss sends them back to box 1.
  */
-export const REVIEW_INTERVALS_DAYS = [1, 3, 7] as const;
-export const BOX_COUNT = REVIEW_INTERVALS_DAYS.length + 1;
+export const REVIEW_INTERVALS_DAYS = [1, 3, 7, 15] as const;
+export const MASTERED_BOX = REVIEW_INTERVALS_DAYS.length + 1;
 
 export type ReviewItem = {
   base: string;
   key: FormKey;
-  /** 1 to BOX_COUNT. A wrong answer puts the item back in box 1. */
+  /** 1 to MASTERED_BOX. A wrong answer puts the item back in box 1. */
   box: number;
   /** The item is asked on or after this date. */
   due: LocalDate;
@@ -29,8 +30,8 @@ export type ReviewList = Record<string, ReviewItem>;
 
 export type ReviewChange =
   | { kind: 'added' }
-  | { kind: 'advanced'; inDays: number }
-  | { kind: 'cleared' }
+  /** `box` is the new box, which stays at MASTERED_BOX once reached. */
+  | { kind: 'advanced'; box: number; inDays: number }
   /** Answered correctly before its due date, e.g. while practising all verbs; nothing changes. */
   | { kind: 'not-due' }
   | { kind: 'none' };
@@ -57,13 +58,10 @@ export function recordAnswer(
   if (!item) return { list, change: { kind: 'none' } };
   // Only answers on or after the due date count, so repeating an item in one day cannot rush it through.
   if (!isDue(item, today)) return { list, change: { kind: 'not-due' } };
-  const inDays = REVIEW_INTERVALS_DAYS[item.box - 1];
-  if (inDays === undefined) {
-    const { [id]: _cleared, ...rest } = list;
-    return { list: rest, change: { kind: 'cleared' } };
-  }
-  const advanced: ReviewItem = { ...item, box: item.box + 1, due: addDays(today, inDays) };
-  return { list: { ...list, [id]: advanced }, change: { kind: 'advanced', inDays } };
+  const inDays = REVIEW_INTERVALS_DAYS[Math.min(item.box, REVIEW_INTERVALS_DAYS.length) - 1]!;
+  const box = Math.min(item.box + 1, MASTERED_BOX);
+  const advanced: ReviewItem = { ...item, box, due: addDays(today, inDays) };
+  return { list: { ...list, [id]: advanced }, change: { kind: 'advanced', box, inDays } };
 }
 
 /** Items to ask today: most-missed first, ties broken by the most recent mistake. */
@@ -99,7 +97,7 @@ function parseItem(raw: unknown): ReviewItem | null {
   const { base, key, box, due, miss, lastMissAt } = raw;
   if (typeof base !== 'string' || !isFormKey(key) || !isLocalDate(due) || !isCount(miss) || !isCount(lastMissAt))
     return null;
-  if (!Number.isInteger(box) || (box as number) < 1 || (box as number) > BOX_COUNT) return null;
+  if (!Number.isInteger(box) || (box as number) < 1 || (box as number) > MASTERED_BOX) return null;
   return { base, key, box: box as number, due, miss, lastMissAt };
 }
 

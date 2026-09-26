@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BOX_COUNT,
   dueItems,
+  MASTERED_BOX,
   parseReviewData,
   recordAnswer,
   REVIEW_DATA_VERSION,
@@ -58,17 +58,19 @@ describe('recordAnswer', () => {
       [1, 1, '2026-09-27'],
       [2, 3, '2026-09-29'],
       [3, 7, '2026-10-03'],
-    ])('in box %i schedule the next review %i day(s) later', (box, inDays, due) => {
+      [4, 15, '2026-10-11'],
+    ])('in box %i schedule the next review %i day(s) later in the next box', (box, inDays, due) => {
       const { list, change } = recordAnswer(listOf(item({ box })), 'go', 'past', true, at('2026-09-26'));
-      expect(change).toEqual({ kind: 'advanced', inDays });
+      expect(change).toEqual({ kind: 'advanced', box: box + 1, inDays });
       expect(list['go|past']).toMatchObject({ box: box + 1, due });
     });
 
-    it(`in the last box (${BOX_COUNT}) clear the form as learned`, () => {
-      const start = listOf(item({ box: BOX_COUNT }), item({ base: 'eat' }));
+    it(`in the mastered box (${MASTERED_BOX}) keep the form and check it again 15 days later`, () => {
+      const start = listOf(item({ box: MASTERED_BOX }), item({ base: 'eat' }));
       const { list, change } = recordAnswer(start, 'go', 'past', true, at('2026-09-26'));
-      expect(change).toEqual({ kind: 'cleared' });
-      expect(Object.keys(list)).toEqual(['eat|past']);
+      expect(change).toEqual({ kind: 'advanced', box: MASTERED_BOX, inDays: 15 });
+      expect(list['go|past']).toMatchObject({ box: MASTERED_BOX, due: '2026-10-11' });
+      expect(Object.keys(list)).toHaveLength(2);
     });
 
     it('count from the answer date, not from the original due date', () => {
@@ -76,16 +78,19 @@ describe('recordAnswer', () => {
       expect(late.list['go|past']?.due).toBe('2026-09-29');
     });
 
-    it('take four correct answers over 1 + 3 + 7 days after a miss', () => {
+    it('reach the mastered box after four correct answers over 1 + 3 + 7 days, then recheck every 15 days', () => {
       let list = recordAnswer({}, 'go', 'past', false, at('2026-09-26', 9)).list;
-      const kinds = [];
-      for (const day of ['2026-09-26', '2026-09-27', '2026-09-30', '2026-10-07']) {
-        const r = recordAnswer(list, 'go', 'past', true, at(day, 20));
-        list = r.list;
-        kinds.push(r.change.kind);
+      const dues = [];
+      for (const day of ['2026-09-26', '2026-09-27', '2026-09-30', '2026-10-07', '2026-10-22']) {
+        list = recordAnswer(list, 'go', 'past', true, at(day, 20)).list;
+        dues.push(`${list['go|past']?.box}:${list['go|past']?.due}`);
       }
-      expect(kinds).toEqual(['advanced', 'advanced', 'advanced', 'cleared']);
-      expect(list).toEqual({});
+      expect(dues).toEqual(['2:2026-09-27', '3:2026-09-30', '4:2026-10-07', '5:2026-10-22', '5:2026-11-06']);
+    });
+
+    it('send a mastered form back to box 1 on a miss', () => {
+      const { list } = recordAnswer(listOf(item({ box: MASTERED_BOX })), 'go', 'past', false, at('2026-09-26'));
+      expect(list['go|past']).toMatchObject({ box: 1, due: '2026-09-26' });
     });
   });
 
@@ -145,7 +150,7 @@ describe('parseReviewData', () => {
       items: {
         ok: item(),
         badKey: item({ key: 'future' as never }),
-        badBox: item({ base: 'x', box: BOX_COUNT + 1 }),
+        badBox: item({ base: 'x', box: MASTERED_BOX + 1 }),
         badDate: item({ base: 'y', due: '26/09/2026' }),
         notObject: 42,
       },
