@@ -50,7 +50,13 @@ export type ReviewTarget = { base: string; key: FormKey };
 export type QuestionSource =
   | { kind: 'all'; verbs: readonly Verb[] }
   | { kind: 'verb'; verb: Verb }
-  | { kind: 'review'; targets: readonly ReviewTarget[]; lookup: (base: string) => Verb | undefined };
+  | {
+      kind: 'review';
+      targets: readonly ReviewTarget[];
+      lookup: (base: string) => Verb | undefined;
+      /** The item just asked. A missed item is due again at once, and asking it right back only tests short-term memory. */
+      avoid?: ReviewTarget;
+    };
 
 export function nextQuestion(source: QuestionSource, pick: Picker): Question | null {
   if (source.kind === 'review') {
@@ -58,8 +64,11 @@ export function nextQuestion(source: QuestionSource, pick: Picker): Question | n
       const verb = source.lookup(t.base);
       return verb && templatesFor(verb, t.key).length > 0 ? [{ verb, key: t.key }] : [];
     });
-    if (candidates.length === 0) return null;
-    const { verb, key } = pick(candidates);
+    const { avoid } = source;
+    const others = candidates.filter((c) => !(avoid && c.verb.base === avoid.base && c.key === avoid.key));
+    const pool = others.length > 0 ? others : candidates;
+    if (pool.length === 0) return null;
+    const { verb, key } = pick(pool);
     return makeQuestion(verb, key, pick);
   }
   const verb = source.kind === 'verb' ? source.verb : pick(source.verbs);

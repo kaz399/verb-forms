@@ -37,7 +37,7 @@
       </div>
       <div class="seg" id="rangeSeg">
         <button data-range="all" aria-pressed="true">すべての動詞</button>
-        <button data-range="review" aria-pressed="false">復習リスト</button>
+        <button data-range="review" aria-pressed="false">今日の復習</button>
       </div>
       <div class="score" id="score">正解 0 / 0</div>
     </div>
@@ -45,7 +45,7 @@
   </section>
 
   <section id="tab-review" hidden>
-    <p class="lead">練習で間違えた形がここにたまります。復習リストから出題して、続けて2回正解するとリストから外れます。</p>
+    <p class="lead" id="rvLead"></p>
     <div id="rvArea"></div>
   </section>
 </div>

@@ -98,6 +98,8 @@ nav button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
 
 /* review */
+.rv-h{font-size:1rem;font-weight:700;margin:24px 0 10px}
+.rv-h:first-child{margin-top:0}
 .rv{list-style:none;padding:0;margin:0 0 18px;display:grid;gap:8px}
 .rv li{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--fc);border-radius:12px;padding:10px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
 .rv .w{font-size:1.2rem;font-weight:700;min-width:5.5em}

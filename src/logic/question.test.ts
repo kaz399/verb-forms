@@ -83,6 +83,29 @@ describe('nextQuestion', () => {
     expect(q).toMatchObject({ verb: verb('swim'), key: 'pp' });
   });
 
+  it('does not ask the item just asked while others are due', () => {
+    const lookup = (b: string) => VERB_BY_BASE.get(b);
+    const targets = [
+      { base: 'go', key: 'past' },
+      { base: 'eat', key: 'pp' },
+    ] as const;
+    const q = nextQuestion({ kind: 'review', targets, lookup, avoid: { base: 'go', key: 'past' } }, first);
+    expect(q).toMatchObject({ verb: verb('eat'), key: 'pp' });
+  });
+
+  it('asks the item just asked again when it is the only one due', () => {
+    const q = nextQuestion(
+      {
+        kind: 'review',
+        targets: [{ base: 'go', key: 'past' }],
+        lookup: (b) => VERB_BY_BASE.get(b),
+        avoid: { base: 'go', key: 'past' },
+      },
+      first,
+    );
+    expect(q).toMatchObject({ verb: verb('go'), key: 'past' });
+  });
+
   it('returns null when the review list is empty', () => {
     expect(nextQuestion({ kind: 'review', targets: [], lookup: (b) => VERB_BY_BASE.get(b) }, first)).toBeNull();
   });

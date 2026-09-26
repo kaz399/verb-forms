@@ -10,19 +10,29 @@ import {
   type Question,
   type QuestionSource,
 } from '../logic/question';
-import { recordAnswer, STREAK_TO_CLEAR, type ReviewChange } from '../logic/review';
+import { daysBetween, localDate } from '../logic/date';
+import { dueItems, recordAnswer, upcomingItems, type ReviewChange } from '../logic/review';
 import { app, setReview, type PracticeState } from './app';
 import { openCard } from './card';
 import { explainMistake } from './feedback';
 import { byId, esc, formTag, renderClues } from './html';
 import { showTab } from './tabs';
 
-const REVIEW_NOTES: Record<ReviewChange, string> = {
-  added: 'この形を復習リストに入れました。',
-  progressed: `復習リストの問題です。あと${STREAK_TO_CLEAR - 1}回正解でリストから外れます。`,
-  cleared: `続けて${STREAK_TO_CLEAR}回正解したので、復習リストから外しました。`,
-  none: '',
-};
+function reviewNote(change: ReviewChange): string {
+  switch (change.kind) {
+    case 'added':
+      return 'この形を復習リストに入れました。今日のうちにもう一度出ます。';
+    case 'advanced':
+      return `復習リストの問題です。次は${inDaysLabel(change.inDays)}に出ます。`;
+    case 'cleared':
+      return 'この形は「覚えた」になりました。復習リストから外します。';
+    case 'not-due':
+    case 'none':
+      return '';
+  }
+}
+
+export const inDaysLabel = (days: number) => (days === 1 ? '明日' : `${days}日後`);
 
 const state = app.practice;
 
@@ -37,7 +47,12 @@ function syncSegments(): void {
 
 function questionSource(): QuestionSource {
   if (state.range === 'review') {
-    return { kind: 'review', targets: Object.values(app.review), lookup: (b) => VERB_BY_BASE.get(b) };
+    return {
+      kind: 'review',
+      targets: dueItems(app.review, localDate(Date.now())),
+      lookup: (b) => VERB_BY_BASE.get(b),
+      avoid: state.q ? { base: state.q.verb.base, key: state.q.key } : undefined,
+    };
   }
   const only = state.only ? VERB_BY_BASE.get(state.only) : undefined;
   return only ? { kind: 'verb', verb: only } : { kind: 'all', verbs: VERBS };
@@ -76,11 +91,18 @@ function renderScore(): void {
   byId('score').textContent = `正解 ${state.right} / ${state.total}`;
 }
 
+function emptyReviewMessage(): string {
+  const today = localDate(Date.now());
+  const [next] = upcomingItems(app.review, today);
+  if (!next) return '復習リストは空です。<br>「すべての動詞」で練習して、間違えた形がここから出題されます。';
+  return `今日の復習はおわり！<br>次の復習は${inDaysLabel(daysBetween(today, next.due))}です。`;
+}
+
 function renderQuestion(): void {
   const area = byId('qArea');
   renderScore();
   if (!state.q) {
-    area.innerHTML = `<div class="q empty">復習リストは空です。<br>「すべての動詞」で練習して、間違えた形がここから出題されます。</div>`;
+    area.innerHTML = `<div class="q empty">${emptyReviewMessage()}</div>`;
     return;
   }
   const v = state.q.verb;
@@ -134,8 +156,8 @@ function answer(raw: string): void {
   renderScore();
 
   const recorded = recordAnswer(app.review, v.base, q.key, result.ok, Date.now());
-  if (recorded.change !== 'none') setReview(recorded.list);
-  const reviewNote = REVIEW_NOTES[recorded.change];
+  if (recorded.list !== app.review) setReview(recorded.list);
+  const note = reviewNote(recorded.change);
 
   const sentence = byId('sent');
   sentence.innerHTML = sentenceHTML(q, true);
@@ -161,7 +183,7 @@ function answer(raw: string): void {
     <div class="fb">
       <p class="verdict ${result.ok ? 'ok' : 'ng'}">${result.ok ? '正解！' : 'おしい！'}　${formTag(q.key)} <b class="f-${q.key}" style="color:var(--fc)">${v[q.key]}</b></p>
       <ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>
-      ${reviewNote ? `<p class="score" style="margin:0">${reviewNote}</p>` : ''}
+      ${note ? `<p class="score" style="margin:0">${note}</p>` : ''}
       <div class="actions">
         <button class="btn" id="next">次の問題</button>
         <button class="btn sub" id="toCard">${v.base} のカードを見る</button>

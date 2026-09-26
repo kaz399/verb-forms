@@ -1,54 +1,169 @@
 import { describe, expect, it } from 'vitest';
-import { recordAnswer, reviewId, sortForDisplay, STREAK_TO_CLEAR, type ReviewList } from './review';
+import {
+  BOX_COUNT,
+  dueItems,
+  parseReviewData,
+  recordAnswer,
+  REVIEW_DATA_VERSION,
+  reviewId,
+  toReviewData,
+  upcomingItems,
+  type ReviewItem,
+  type ReviewList,
+} from './review';
 
-const NOW = 1_000;
+/** Epoch milliseconds for a local date and hour. */
+const at = (date: string, hour = 12) => {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(y!, m! - 1, d!, hour).getTime();
+};
+
+const item = (overrides: Partial<ReviewItem> = {}): ReviewItem => ({
+  base: 'go',
+  key: 'past',
+  box: 1,
+  due: '2026-09-26',
+  miss: 1,
+  lastMissAt: at('2026-09-26'),
+  ...overrides,
+});
+
+const listOf = (...items: ReviewItem[]): ReviewList =>
+  Object.fromEntries(items.map((it) => [reviewId(it.base, it.key), it]));
 
 describe('recordAnswer', () => {
-  it('adds a wrongly answered form to the list', () => {
-    const { list, change } = recordAnswer({}, 'go', 'past', false, NOW);
-    expect(change).toBe('added');
-    expect(list[reviewId('go', 'past')]).toEqual({ base: 'go', key: 'past', miss: 1, streak: 0, t: NOW });
+  describe('wrong answers', () => {
+    it('add the form to box 1, due the same day', () => {
+      const now = at('2026-09-26', 21);
+      const { list, change } = recordAnswer({}, 'go', 'past', false, now);
+      expect(change).toEqual({ kind: 'added' });
+      expect(list['go|past']).toEqual({ base: 'go', key: 'past', box: 1, due: '2026-09-26', miss: 1, lastMissAt: now });
+    });
+
+    it('send a form in a later box back to box 1 and count the miss', () => {
+      const start = listOf(item({ box: 3, due: '2026-09-30', miss: 2 }));
+      const { list } = recordAnswer(start, 'go', 'past', false, at('2026-09-27'));
+      expect(list['go|past']).toMatchObject({ box: 1, due: '2026-09-27', miss: 3 });
+    });
+
+    it('do not mutate the given list', () => {
+      const start: ReviewList = {};
+      recordAnswer(start, 'go', 'past', false, at('2026-09-26'));
+      expect(start).toEqual({});
+    });
   });
 
-  it('counts repeated mistakes and resets the streak', () => {
-    const start: ReviewList = { 'go|past': { base: 'go', key: 'past', miss: 2, streak: 1, t: 0 } };
-    const { list } = recordAnswer(start, 'go', 'past', false, NOW);
-    expect(list['go|past']).toEqual({ base: 'go', key: 'past', miss: 3, streak: 0, t: NOW });
+  describe('correct answers on a due form', () => {
+    it.each([
+      [1, 1, '2026-09-27'],
+      [2, 3, '2026-09-29'],
+      [3, 7, '2026-10-03'],
+    ])('in box %i schedule the next review %i day(s) later', (box, inDays, due) => {
+      const { list, change } = recordAnswer(listOf(item({ box })), 'go', 'past', true, at('2026-09-26'));
+      expect(change).toEqual({ kind: 'advanced', inDays });
+      expect(list['go|past']).toMatchObject({ box: box + 1, due });
+    });
+
+    it(`in the last box (${BOX_COUNT}) clear the form as learned`, () => {
+      const start = listOf(item({ box: BOX_COUNT }), item({ base: 'eat' }));
+      const { list, change } = recordAnswer(start, 'go', 'past', true, at('2026-09-26'));
+      expect(change).toEqual({ kind: 'cleared' });
+      expect(Object.keys(list)).toEqual(['eat|past']);
+    });
+
+    it('count from the answer date, not from the original due date', () => {
+      const late = recordAnswer(listOf(item({ box: 2, due: '2026-09-20' })), 'go', 'past', true, at('2026-09-26'));
+      expect(late.list['go|past']?.due).toBe('2026-09-29');
+    });
+
+    it('take four correct answers over 1 + 3 + 7 days after a miss', () => {
+      let list = recordAnswer({}, 'go', 'past', false, at('2026-09-26', 9)).list;
+      const kinds = [];
+      for (const day of ['2026-09-26', '2026-09-27', '2026-09-30', '2026-10-07']) {
+        const r = recordAnswer(list, 'go', 'past', true, at(day, 20));
+        list = r.list;
+        kinds.push(r.change.kind);
+      }
+      expect(kinds).toEqual(['advanced', 'advanced', 'advanced', 'cleared']);
+      expect(list).toEqual({});
+    });
   });
 
-  it('leaves the list unchanged when a form not on it is answered correctly', () => {
+  describe('correct answers before the due date', () => {
+    it('change nothing, even late on the day before', () => {
+      const start = listOf(item({ box: 2, due: '2026-09-27' }));
+      const { list, change } = recordAnswer(start, 'go', 'past', true, at('2026-09-26', 23));
+      expect(change).toEqual({ kind: 'not-due' });
+      expect(list).toBe(start);
+    });
+  });
+
+  it('ignores a correct answer on a form not on the list', () => {
     const start: ReviewList = {};
-    const { list, change } = recordAnswer(start, 'go', 'past', true, NOW);
-    expect(change).toBe('none');
+    const { list, change } = recordAnswer(start, 'go', 'past', true, at('2026-09-26'));
+    expect(change).toEqual({ kind: 'none' });
     expect(list).toBe(start);
-  });
-
-  it(`removes a form after ${STREAK_TO_CLEAR} consecutive correct answers`, () => {
-    let list = recordAnswer({}, 'go', 'past', false, NOW).list;
-    const changes = [];
-    for (let i = 0; i < STREAK_TO_CLEAR; i++) {
-      const r = recordAnswer(list, 'go', 'past', true, NOW);
-      list = r.list;
-      changes.push(r.change);
-    }
-    expect(changes).toEqual([...Array(STREAK_TO_CLEAR - 1).fill('progressed'), 'cleared']);
-    expect(list).toEqual({});
-  });
-
-  it('does not mutate the given list', () => {
-    const start: ReviewList = {};
-    recordAnswer(start, 'go', 'past', false, NOW);
-    expect(start).toEqual({});
   });
 });
 
-describe('sortForDisplay', () => {
-  it('orders by miss count, then by the latest mistake', () => {
-    const list: ReviewList = {
-      a: { base: 'a', key: 'past', miss: 1, streak: 0, t: 5 },
-      b: { base: 'b', key: 'past', miss: 3, streak: 0, t: 1 },
-      c: { base: 'c', key: 'past', miss: 1, streak: 0, t: 9 },
+describe('dueItems and upcomingItems', () => {
+  const list = listOf(
+    item({ base: 'a', due: '2026-09-26', miss: 1, lastMissAt: 5 }),
+    item({ base: 'b', due: '2026-09-20', miss: 3, lastMissAt: 1 }),
+    item({ base: 'c', due: '2026-09-25', miss: 1, lastMissAt: 9 }),
+    item({ base: 'd', due: '2026-10-03', miss: 1 }),
+    item({ base: 'e', due: '2026-09-27', miss: 1 }),
+  );
+
+  it('lists items due today or earlier, most-missed and then most recently missed first', () => {
+    expect(dueItems(list, '2026-09-26').map((i) => i.base)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('lists later items, soonest first', () => {
+    expect(upcomingItems(list, '2026-09-26').map((i) => i.base)).toEqual(['e', 'd']);
+  });
+});
+
+describe('parseReviewData', () => {
+  const now = at('2026-09-26');
+
+  it('reads back what toReviewData writes', () => {
+    const list = listOf(item(), item({ base: 'eat', key: 'pp', box: 3, due: '2026-10-01', miss: 4 }));
+    expect(parseReviewData(JSON.parse(JSON.stringify(toReviewData(list))), now)).toEqual(list);
+  });
+
+  it('carries over the prototype format into box 1, due today', () => {
+    const v1 = { 'go|past': { base: 'go', key: 'past', miss: 2, streak: 1, t: 1234 } };
+    expect(parseReviewData(v1, now)).toEqual(
+      listOf({ base: 'go', key: 'past', box: 1, due: '2026-09-26', miss: 2, lastMissAt: 1234 }),
+    );
+  });
+
+  it('drops malformed items and keeps the rest', () => {
+    const data = {
+      version: REVIEW_DATA_VERSION,
+      items: {
+        ok: item(),
+        badKey: item({ key: 'future' as never }),
+        badBox: item({ base: 'x', box: BOX_COUNT + 1 }),
+        badDate: item({ base: 'y', due: '26/09/2026' }),
+        notObject: 42,
+      },
     };
-    expect(sortForDisplay(list).map((i) => i.base)).toEqual(['b', 'c', 'a']);
+    expect(parseReviewData(data, now)).toEqual(listOf(item()));
+  });
+
+  it('re-keys items by their own base and form', () => {
+    const data = { version: REVIEW_DATA_VERSION, items: { wrong: item() } };
+    expect(Object.keys(parseReviewData(data, now)!)).toEqual(['go|past']);
+  });
+
+  it.each([
+    ['null', null],
+    ['a number', 42],
+    ['an unknown version', { version: REVIEW_DATA_VERSION + 1, items: {} }],
+    ['a version without items', { version: REVIEW_DATA_VERSION }],
+  ])('rejects %s', (_, data) => {
+    expect(parseReviewData(data, now)).toBeNull();
   });
 });
