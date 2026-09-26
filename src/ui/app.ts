@@ -5,7 +5,8 @@ import type { Pattern } from '../logic/forms';
 import type { Question } from '../logic/question';
 import { localDate } from '../logic/date';
 import { dueItems, type ReviewList } from '../logic/review';
-import { loadReview, saveReview } from '../storage';
+import type { Stats } from '../logic/stats';
+import { loadReview, loadStats, saveReview, saveStats } from '../storage';
 import { byId } from './html';
 
 export type Tab = 'card' | 'practice' | 'review';
@@ -27,6 +28,7 @@ export const app = {
   filter: 'ALL' as Pattern | 'ALL',
   selected: 'go',
   review: loadReview(Date.now()),
+  stats: loadStats(),
   practice: {
     mode: 'choose',
     range: 'all',
@@ -37,6 +39,11 @@ export const app = {
     total: 0,
   } as PracticeState,
 };
+
+export function setStats(stats: Stats): void {
+  app.stats = stats;
+  saveStats(stats);
+}
 
 export function setReview(list: ReviewList): void {
   app.review = list;

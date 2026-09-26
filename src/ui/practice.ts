@@ -12,7 +12,8 @@ import {
 } from '../logic/question';
 import { daysBetween, localDate } from '../logic/date';
 import { dueItems, MASTERED_BOX, recordAnswer, upcomingItems, type ReviewChange } from '../logic/review';
-import { app, setReview, type PracticeState } from './app';
+import { recordStat, type AnswerRange } from '../logic/stats';
+import { app, setReview, setStats, type PracticeState } from './app';
 import { openCard } from './card';
 import { explainMistake } from './feedback';
 import { byId, esc, formTag, renderClues } from './html';
@@ -43,6 +44,11 @@ function syncSegments(): void {
   document
     .querySelectorAll<HTMLButtonElement>('#rangeSeg button')
     .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.range === state.range)));
+}
+
+function answerRange(): AnswerRange {
+  if (state.range === 'review') return 'review';
+  return state.only ? 'verb' : 'all';
 }
 
 function questionSource(): QuestionSource {
@@ -157,6 +163,7 @@ function answer(raw: string): void {
 
   const recorded = recordAnswer(app.review, v.base, q.key, result.ok, Date.now());
   if (recorded.list !== app.review) setReview(recorded.list);
+  setStats(recordStat(app.stats, { mode: state.mode, range: answerRange(), key: q.key, diagnosis: result }, Date.now()));
   const note = reviewNote(recorded.change);
 
   const sentence = byId('sent');

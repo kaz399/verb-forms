@@ -2,11 +2,13 @@
 // Copyright 2026 Yabe Kazuhiro
 
 import { parseReviewData, toReviewData, type ReviewList } from './logic/review';
+import { parseStatsData, toStatsData, type Stats } from './logic/stats';
 
 const REVIEW_STORAGE_KEY = 'verbforms.review.v2';
 // Read only once, to carry over the list saved by the prototype. It is left in place so that
 // a failed save of the new format cannot lose the learner's data.
 const LEGACY_REVIEW_STORAGE_KEY = 'verbforms.review.v1';
+const STATS_STORAGE_KEY = 'verbforms.stats.v1';
 
 function readJson(key: string): unknown {
   const text = localStorage.getItem(key);
@@ -23,10 +25,26 @@ export function loadReview(now: number): ReviewList {
   }
 }
 
-export function saveReview(list: ReviewList): void {
+function writeJson(key: string, value: unknown): void {
   try {
-    localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(toReviewData(list)));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Keep the in-memory list; it will be lost on reload, which is the best we can do.
+    // Keep the in-memory data; it will be lost on reload, which is the best we can do.
   }
+}
+
+export function saveReview(list: ReviewList): void {
+  writeJson(REVIEW_STORAGE_KEY, toReviewData(list));
+}
+
+export function loadStats(): Stats {
+  try {
+    return parseStatsData(readJson(STATS_STORAGE_KEY)) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveStats(stats: Stats): void {
+  writeJson(STATS_STORAGE_KEY, toStatsData(stats));
 }
