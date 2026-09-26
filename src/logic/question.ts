@@ -48,7 +48,12 @@ export function choiceOptions(v: Verb, random: () => number = Math.random): stri
 export type ReviewTarget = { base: string; key: FormKey };
 
 export type QuestionSource =
-  | { kind: 'all'; verbs: readonly Verb[] }
+  | {
+      kind: 'all';
+      verbs: readonly Verb[];
+      /** Verbs asked half of the time, so that newly added ones are not lost among the rest. */
+      focus?: readonly Verb[];
+    }
   | { kind: 'verb'; verb: Verb }
   | {
       kind: 'review';
@@ -57,6 +62,12 @@ export type QuestionSource =
       /** The item just asked. A missed item is due again at once, and asking it right back only tests short-term memory. */
       avoid?: ReviewTarget;
     };
+
+function pickFromAll(verbs: readonly Verb[], focus: readonly Verb[], pick: Picker): Verb {
+  const others = verbs.filter((v) => !focus.includes(v));
+  if (focus.length === 0 || others.length === 0) return pick(verbs);
+  return pick(pick([focus, others]));
+}
 
 export function nextQuestion(source: QuestionSource, pick: Picker): Question | null {
   if (source.kind === 'review') {
@@ -71,6 +82,6 @@ export function nextQuestion(source: QuestionSource, pick: Picker): Question | n
     const { verb, key } = pick(pool);
     return makeQuestion(verb, key, pick);
   }
-  const verb = source.kind === 'verb' ? source.verb : pick(source.verbs);
+  const verb = source.kind === 'verb' ? source.verb : pickFromAll(source.verbs, source.focus ?? [], pick);
   return makeQuestion(verb, pick(askableKeys(verb)), pick);
 }

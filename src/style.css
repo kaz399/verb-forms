@@ -103,6 +103,7 @@ nav button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
 .fb{margin-top:20px;border-top:1px dashed var(--line);padding-top:18px}
 .verdict{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:1.25rem;margin:0 0 8px}
 .verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
+.step-up{margin:12px 0 0;padding:10px 14px;border-radius:12px;background:var(--mark);font-weight:700}
 .fb ul{margin:0 0 6px;padding-left:1.2em}
 .fb li{margin-bottom:6px}
 .tag{display:inline-block;font-size:.78rem;font-weight:700;color:var(--fc);border:1.5px solid var(--fc);border-radius:6px;padding:0 6px;margin:0 2px;line-height:1.5}

@@ -14,6 +14,7 @@ const content: BackupContent = {
       mistakes: { 'irregular-ed': 3 },
     },
   },
+  steps: { step: 2, recent: [true, false, true] },
 };
 
 const serialize = (value: unknown) => JSON.stringify(value);
@@ -25,8 +26,13 @@ describe('backup', () => {
   });
 
   it('restores an empty record', () => {
-    const text = serialize(createBackup({ review: {}, stats: {} }, NOW));
-    expect(parseBackup(text, NOW)).toEqual({ ok: true, review: {}, stats: {} });
+    const text = serialize(createBackup({ review: {}, stats: {}, steps: { step: 1, recent: [] } }, NOW));
+    expect(parseBackup(text, NOW)).toEqual({ ok: true, review: {}, stats: {}, steps: { step: 1, recent: [] } });
+  });
+
+  it('reads a file saved before steps existed, starting from step 1', () => {
+    const { steps: _steps, ...v1 } = { ...createBackup(content, NOW), format: 1 };
+    expect(parseBackup(serialize(v1), NOW)).toEqual({ ok: true, ...content, steps: { step: 1, recent: [] } });
   });
 
   it('names the file with the local date', () => {
@@ -61,6 +67,7 @@ describe('backup', () => {
       ['with review data lacking its version', { ...backup, review: backup.review.items }],
       ['without stats', { ...backup, stats: undefined }],
       ['with stats of an unknown version', { ...backup, stats: { version: 99, days: {} } }],
+      ['without steps', { ...backup, steps: undefined }],
     ])('%s', (_, value) => {
       expect(parseBackup(serialize(value), NOW)).toEqual({ ok: false, reason: 'broken' });
     });

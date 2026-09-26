@@ -4,6 +4,7 @@
 import { VERB_BY_BASE, VERBS } from '../data/verbs';
 import { LABEL, LABEL_LONG, PATTERN_INFO, USAGE, type FormKey, type Pattern, type Verb } from '../logic/forms';
 import { exampleSentence } from '../logic/question';
+import { nextStep, verbsOf, verbsUpTo } from '../logic/steps';
 import { canSpeak, speak } from '../speech';
 import { app } from './app';
 import { byId, esc, renderClues } from './html';
@@ -71,8 +72,17 @@ function renderFilters(): void {
   );
 }
 
+function renderStepNote(): void {
+  const { step } = app.steps;
+  const available = verbsUpTo(VERBS, step).length;
+  const next = nextStep(step);
+  byId('stepNote').textContent = next
+    ? `ステップ${step}：${available}語を練習中。ステップ${next}で${verbsOf(VERBS, next).length}語が登場します。`
+    : `ステップ${step}：${available}語すべてを練習中です。`;
+}
+
 function renderChips(): void {
-  const list = VERBS.filter((v) => app.filter === 'ALL' || v.pattern === app.filter);
+  const list = verbsUpTo(VERBS, app.steps.step).filter((v) => app.filter === 'ALL' || v.pattern === app.filter);
   renderRow(
     'chips',
     list
@@ -117,6 +127,12 @@ function renderCard(): void {
   byId('drillThis').onclick = () => startPractice({ only: v.base });
 }
 
+/** Redraws the verb list, which grows when the learner reaches a new step. */
+export function refreshVerbList(): void {
+  renderChips();
+  renderStepNote();
+}
+
 /** Shows the card of `base` with all filters cleared. */
 export function openCard(base: string): void {
   app.selected = base;
@@ -130,6 +146,7 @@ export function openCard(base: string): void {
 export function initCard(): void {
   renderFilters();
   renderChips();
+  renderStepNote();
   renderCard();
   revealSelectedChip();
 }

@@ -124,6 +124,35 @@ describe('shuffle', () => {
 });
 
 describe('nextQuestion', () => {
+  describe('from all verbs with a focus', () => {
+    const verbs = [verb('go'), verb('eat'), verb('swim'), verb('sing')];
+    const focus = [verb('swim'), verb('sing')];
+
+    it('asks a focused verb when the coin says so', () => {
+      expect(nextQuestion({ kind: 'all', verbs, focus }, first)?.verb.base).toBe('swim');
+    });
+
+    it('asks one of the other verbs otherwise', () => {
+      expect(nextQuestion({ kind: 'all', verbs, focus }, last)?.verb.base).toBe('eat');
+    });
+
+    it('asks focused and other verbs equally often', () => {
+      let n = 0;
+      const counts = { focus: 0, others: 0 };
+      // Alternates the coin and always takes the first verb of the chosen group.
+      const alternating: Picker = (items) => (items.length === 2 && Array.isArray(items[0]) ? items[n++ % 2]! : items[0]!);
+      for (let i = 0; i < 100; i++) {
+        const q = nextQuestion({ kind: 'all', verbs, focus }, alternating)!;
+        counts[focus.includes(q.verb) ? 'focus' : 'others']++;
+      }
+      expect(counts).toEqual({ focus: 50, others: 50 });
+    });
+
+    it('asks from all verbs when there is no focus', () => {
+      expect(nextQuestion({ kind: 'all', verbs }, last)?.verb.base).toBe('sing');
+    });
+  });
+
   it('asks only the chosen verb', () => {
     expect(nextQuestion({ kind: 'verb', verb: verb('eat') }, last)?.verb.base).toBe('eat');
   });

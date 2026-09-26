@@ -6,7 +6,8 @@ import type { Question } from '../logic/question';
 import { localDate } from '../logic/date';
 import { dueItems, type ReviewList } from '../logic/review';
 import type { Stats } from '../logic/stats';
-import { loadReview, loadStats, saveReview, saveStats } from '../storage';
+import type { StepProgress } from '../logic/steps';
+import { loadReview, loadStats, loadSteps, saveReview, saveStats, saveSteps } from '../storage';
 import { byId } from './html';
 
 export type Tab = 'card' | 'practice' | 'review';
@@ -29,6 +30,7 @@ export const app = {
   selected: 'go',
   review: loadReview(Date.now()),
   stats: loadStats(),
+  steps: loadSteps(),
   practice: {
     mode: 'choose',
     range: 'all',
@@ -39,6 +41,11 @@ export const app = {
     total: 0,
   } as PracticeState,
 };
+
+export function setSteps(progress: StepProgress): void {
+  app.steps = progress;
+  saveSteps(progress);
+}
 
 export function setStats(stats: Stats): void {
   app.stats = stats;

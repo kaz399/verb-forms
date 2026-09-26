@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Yabe Kazuhiro
 
+import { VERBS } from '../data/verbs';
 import { localDate } from '../logic/date';
 import type { Mistake } from '../logic/diagnose';
 import { FORM_KEYS, LABEL, type FormKey } from '../logic/forms';
@@ -14,6 +15,7 @@ import {
   type AnswerMode,
   type Period,
 } from '../logic/stats';
+import { ADVANCE_CORRECT, ADVANCE_WINDOW, nextStep, verbsUpTo } from '../logic/steps';
 import { app } from './app';
 import { esc, formTag } from './html';
 
@@ -136,15 +138,34 @@ function mistakesHTML(current: Period, previous: Period): string {
   return `<ul class="mk">${[...ids, ...gone].map(row).join('')}</ul>`;
 }
 
+function stepHTML(): string {
+  const { step, recent } = app.steps;
+  const next = nextStep(step);
+  const head = `
+      <div class="tile-l">いまのステップ</div>
+      <div class="tile-v">ステップ${step}（${verbsUpTo(VERBS, step).length}語）</div>`;
+  if (!next) return `<div class="tile">${head}<div class="tile-s">最後のステップです。すべての動詞を練習しています。</div></div>`;
+  const correct = recent.filter(Boolean).length;
+  return `
+    <div class="tile">
+      ${head}
+      <span class="meter" aria-hidden="true"><span style="width:${Math.min(100, (correct / ADVANCE_CORRECT) * 100)}%;background:var(--c-s3)"></span></span>
+      <div class="tile-s">「すべての動詞」の直近${recent.length}問のうち正解 ${correct}問</div>
+      <div class="tile-s">直近${ADVANCE_WINDOW}問で${ADVANCE_CORRECT}問正解すると、ステップ${next}に進みます。</div>
+    </div>`;
+}
+
 export function progressHTML(): string {
   const { current, previous } = recentPeriods(localDate(Date.now()));
   if (tallyAnswers(app.stats, current).total === 0 && tallyAnswers(app.stats, previous).total === 0) {
     return `
       <h2 class="rv-h">学習の記録</h2>
+      ${stepHTML()}
       <p class="lead">「文で練習」で問題を解くと、ここに記録が表示されます。</p>`;
   }
   return `
     <h2 class="rv-h">学習の記録</h2>
+    ${stepHTML()}
     ${activityHTML(current)}
     <h3 class="pg-h">「すべての動詞」の正解率</h3>
     ${randomAccuracyHTML(current, previous)}

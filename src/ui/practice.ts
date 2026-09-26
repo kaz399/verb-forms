@@ -13,7 +13,8 @@ import {
 import { daysBetween, localDate } from '../logic/date';
 import { dueItems, MASTERED_BOX, recordAnswer, upcomingItems, type ReviewChange } from '../logic/review';
 import { recordStat, type AnswerRange } from '../logic/stats';
-import { app, setReview, setStats, type PracticeState } from './app';
+import { recordStepAnswer, verbsOf, verbsUpTo } from '../logic/steps';
+import { app, setReview, setStats, setSteps, type PracticeState } from './app';
 import { openCard } from './card';
 import { explainMistake } from './feedback';
 import { byId, esc, formTag, renderClues } from './html';
@@ -61,7 +62,10 @@ function questionSource(): QuestionSource {
     };
   }
   const only = state.only ? VERB_BY_BASE.get(state.only) : undefined;
-  return only ? { kind: 'verb', verb: only } : { kind: 'all', verbs: VERBS };
+  if (only) return { kind: 'verb', verb: only };
+  const { step } = app.steps;
+  // From step 2 on, half of the questions use the verbs just added so that they get practised.
+  return { kind: 'all', verbs: verbsUpTo(VERBS, step), focus: step > 1 ? verbsOf(VERBS, step) : [] };
 }
 
 export function nextQuestion(): void {
@@ -163,7 +167,18 @@ function answer(raw: string): void {
 
   const recorded = recordAnswer(app.review, v.base, q.key, result.ok, Date.now());
   if (recorded.list !== app.review) setReview(recorded.list);
-  setStats(recordStat(app.stats, { mode: state.mode, range: answerRange(), key: q.key, diagnosis: result }, Date.now()));
+  const range = answerRange();
+  setStats(recordStat(app.stats, { mode: state.mode, range, key: q.key, diagnosis: result }, Date.now()));
+  // Only random questions show how well the learner knows the verbs of the step as a whole.
+  let stepNote = '';
+  if (range === 'all') {
+    const stepped = recordStepAnswer(app.steps, result.ok);
+    setSteps(stepped.progress);
+    if (stepped.advanced) {
+      const { step } = stepped.progress;
+      stepNote = `おめでとう！ステップ${step}に進みました。新しい動詞が${verbsOf(VERBS, step).length}語増えました。`;
+    }
+  }
   const note = reviewNote(recorded.change);
 
   const sentence = byId('sent');
@@ -191,6 +206,7 @@ function answer(raw: string): void {
       <p class="verdict ${result.ok ? 'ok' : 'ng'}">${result.ok ? '正解！' : 'おしい！'}　${formTag(q.key)} <b class="f-${q.key}" style="color:var(--fc)">${v[q.key]}</b></p>
       <ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>
       ${note ? `<p class="score" style="margin:0">${note}</p>` : ''}
+      ${stepNote ? `<p class="step-up" role="status">${stepNote}</p>` : ''}
       <div class="actions">
         <button class="btn" id="next">次の問題</button>
         <button class="btn sub" id="toCard">${v.base} のカードを見る</button>

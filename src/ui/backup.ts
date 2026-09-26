@@ -2,12 +2,12 @@
 // Copyright 2026 Yabe Kazuhiro
 
 import { backupFileName, createBackup, parseBackup, type BackupContent } from '../logic/backup';
-import { app, setReview, setStats } from './app';
+import { app, setReview, setStats, setSteps } from './app';
 
 const BACKUP_MIME_TYPE = 'application/json';
 
 const describe = (c: BackupContent) =>
-  `復習リスト ${Object.keys(c.review).length}個・学習の記録 ${Object.keys(c.stats).length}日分`;
+  `ステップ${c.steps.step}・復習リスト ${Object.keys(c.review).length}個・学習の記録 ${Object.keys(c.stats).length}日分`;
 
 function download(file: File): void {
   const url = URL.createObjectURL(file);
@@ -22,7 +22,7 @@ function download(file: File): void {
 /** Saves the current record to a file. Returns a message for the learner, or '' when cancelled. */
 export async function saveBackupFile(): Promise<string> {
   const now = Date.now();
-  const content = { review: app.review, stats: app.stats };
+  const content = { review: app.review, stats: app.stats, steps: app.steps };
   const file = new File([JSON.stringify(createBackup(content, now), null, 2)], backupFileName(now), {
     type: BACKUP_MIME_TYPE,
   });
@@ -52,7 +52,7 @@ export async function loadBackupFile(file: File): Promise<string> {
       broken: 'ファイルが壊れているため、読み込めませんでした。',
     }[result.reason];
   }
-  const current = { review: app.review, stats: app.stats };
+  const current = { review: app.review, stats: app.stats, steps: app.steps };
   const ok = confirm(
     `いまの記録（${describe(current)}）を、ファイルの記録（${describe(result)}）で置き換えますか？\n` +
       'いまの記録は元に戻せません。',
@@ -60,5 +60,6 @@ export async function loadBackupFile(file: File): Promise<string> {
   if (!ok) return '読み込みをやめました。いまの記録はそのままです。';
   setReview(result.review);
   setStats(result.stats);
+  setSteps(result.steps);
   return `記録を読み込みました（${describe(result)}）。`;
 }
