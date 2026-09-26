@@ -1,11 +1,14 @@
 import { defineConfig } from 'vitest/config';
 import { VitePWA } from 'vite-plugin-pwa';
+import pkg from './package.json' with { type: 'json' };
 
 // GitHub Pages serves a project site under /<repository name>/.
 const BASE_PATH = '/verb-forms/';
 
 export default defineConfig({
   base: BASE_PATH,
+  // package.json is the single source of the version shown in the app.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
