@@ -182,7 +182,9 @@ export function initPractice(): void {
       (b.onclick = () => {
         state.mode = b.dataset.mode as PracticeState['mode'];
         syncSegments();
-        if (!state.answered) renderQuestion();
+        // Re-rendering an answered question would let it be answered again, so move on instead.
+        if (state.answered) nextQuestion();
+        else renderQuestion();
       }),
   );
   document.querySelectorAll<HTMLButtonElement>('#rangeSeg button').forEach(
