@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate-pwa-assets": "pwa-assets-generator"
+    "generate-pwa-assets": "pwa-assets-generator",
+    "docs:verbs": "node scripts/generate-verbs-doc.mjs"
   },
   "devDependencies": {
     "@vite-pwa/assets-generator": "^1.0.4",

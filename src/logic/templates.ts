@@ -2,6 +2,7 @@
 // Copyright 2026 Yabe Kazuhiro
 
 import type { FormKey, Verb } from './forms';
+import { reasons } from './reasons';
 
 /** Chooses one item from a non-empty list. Injected so that sentence generation is testable. */
 export type Picker = <T>(items: readonly T[]) => T;
@@ -65,7 +66,7 @@ export const TEMPLATES: readonly Template[] = [
       const s = pick(SUBJECTS_NON_3RD);
       return {
         text: `{{${s}}} ___ ${v.obj} {{every day}}.`,
-        reason: `主語が「${s}」なので3人称単数ではありません。現在の文でも -s は付けず、原形のままです。`,
+        reason: reasons.notThirdPerson(s),
       };
     },
   },
@@ -75,7 +76,7 @@ export const TEMPLATES: readonly Template[] = [
     applies: always,
     make: (v) => ({
       text: `{{Did}} you ___ ${v.obj} yesterday?`,
-      reason: 'Did の疑問文では「過去」の意味を did が受け持つので、動詞は原形にもどります。',
+      reason: reasons.didQuestion,
     }),
   },
   {
@@ -86,7 +87,7 @@ export const TEMPLATES: readonly Template[] = [
       const s = pick(SUBJECTS_3RD);
       return {
         text: `{{Does}} ${midSentence(s)} ___ ${v.obj}?`,
-        reason: 'Does の疑問文では「3単現」の意味を does が受け持つので、動詞は原形にもどります。',
+        reason: reasons.doesQuestion,
       };
     },
   },
@@ -98,7 +99,7 @@ export const TEMPLATES: readonly Template[] = [
       const s = pick(SUBJECTS_3RD);
       return {
         text: `${s} {{can}} ___ ${v.obj}.`,
-        reason: 'can などの助動詞のあとは、いつでも原形です。',
+        reason: reasons.modal('can'),
       };
     },
   },
@@ -110,7 +111,7 @@ export const TEMPLATES: readonly Template[] = [
       const s = pick(SUBJECTS_3RD);
       return {
         text: `{{${s}}} ___ ${v.obj} {{every day}}.`,
-        reason: `主語が「${s}」（3人称単数）で、every day は「いつもすること」なので現在形。だから -s（-es）が付きます。`,
+        reason: reasons.thirdPersonHabit(s),
       };
     },
   },
@@ -123,7 +124,7 @@ export const TEMPLATES: readonly Template[] = [
       const t = pick(PAST_TIMES);
       return {
         text: `${s} ___ ${v.obj} {{${t}}}.`,
-        reason: `「${t}」は過去を表す言葉なので、過去形を使います。`,
+        reason: reasons.pastTime(t),
       };
     },
   },
@@ -135,7 +136,7 @@ export const TEMPLATES: readonly Template[] = [
       const [s, aux, adv] = pick(PERFECT_SUBJECTS);
       return {
         text: `${s} {{${aux}}} ${adv} ___ ${v.obj}.`,
-        reason: `${aux} ＋ 過去分詞で「もう〜した」「ちょうど〜したところ」（現在完了）。have / has のあとは過去分詞です。`,
+        reason: reasons.perfect(aux),
       };
     },
   },
@@ -145,7 +146,7 @@ export const TEMPLATES: readonly Template[] = [
     applies: (v) => v.passive !== null,
     make: (v) => ({
       text: v.passive ?? '',
-      reason: 'be動詞 ＋ 過去分詞で「〜される」「〜された」（受け身）。',
+      reason: reasons.passive,
     }),
   },
   {
@@ -156,7 +157,7 @@ export const TEMPLATES: readonly Template[] = [
       const [s, be] = pick(PROGRESSIVE_SUBJECTS);
       return {
         text: `${s} {{${be}}} ___ ${v.obj} {{now}}.`,
-        reason: `be動詞（${be}）＋ ing形で「〜しているところ」（進行形）。now もヒントです。`,
+        reason: reasons.progressive(be),
       };
     },
   },

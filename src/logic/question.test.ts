@@ -28,6 +28,15 @@ describe('sentences of all verbs', () => {
     for (const s of allSentences()) expect(s.text, s.label).toMatch(/\{\{.+?\}\}/);
   });
 
+  // Template subjects include names, so an object naming the same person gives "Ken called Ken."
+  it('do not name the same person twice', () => {
+    const pickers: Picker[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (items) => items[Math.min(i, items.length - 1)]!);
+    for (const s of allSentences(pickers)) {
+      const names = (s.text.replace(/\{\{|\}\}/g, '').match(/\b[A-Z][a-z]+\b/g) ?? []).filter((w) => w !== 'I');
+      expect(new Set(names).size, `${s.label}: ${s.text}`).toBe(names.length);
+    }
+  });
+
   it('have an explanation', () => {
     for (const s of allSentences()) expect(s.reason, s.label).not.toBe('');
   });
@@ -39,7 +48,7 @@ describe('sentences of all verbs', () => {
 });
 
 describe('templatesFor', () => {
-  const src = { base: 'know', s3: 'knows', past: 'knew', pp: 'known', ing: 'knowing', ja: '知っている', obj: 'the answer' };
+  const src = { step: 1 as const, base: 'know', s3: 'knows', past: 'knew', pp: 'known', ing: 'knowing', ja: '知っている', obj: 'the answer' };
   const own = { text: '{{Ken}} ___ the answer.', reason: 'a state now' };
 
   it('uses the verb\'s own sentence in place of a template', () => {

@@ -5,8 +5,11 @@ import { VERBS, VERB_BY_BASE } from './verbs';
 const VOWELS = 'aeiou';
 const endsWithConsonantY = (w: string) => w.endsWith('y') && !VOWELS.includes(w.at(-2)!);
 const vowelGroups = (w: string) => w.match(/[aeiou]+/g)?.length ?? 0;
-// One-syllable words ending in a single vowel + a single consonant (not w, x, y) double the consonant.
-const doublesFinal = (w: string) => vowelGroups(w) === 1 && /[^aeiou][aeiou][^aeiouwxy]$/.test(w);
+// Two-syllable verbs stressed on the last syllable double like one-syllable ones; stress is not in the spelling.
+const STRESSED_ON_LAST_SYLLABLE = new Set(['begin', 'forget']);
+// Words ending in a single vowel + a single consonant (not w, x, y) double the consonant when that syllable is stressed.
+const doublesFinal = (w: string) =>
+  (vowelGroups(w) === 1 || STRESSED_ON_LAST_SYLLABLE.has(w)) && /[^aeiou][aeiou][^aeiouwxy]$/.test(w);
 
 const S3_EXCEPTIONS: Record<string, string> = { have: 'has' };
 

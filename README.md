@@ -14,7 +14,10 @@ npm run dev        # start the dev server at http://localhost:5173/verb-forms/
 npm test           # run unit tests
 npm run build      # type-check and build into dist/
 npm run preview    # serve the production build (service worker enabled)
+npm run docs:verbs # regenerate VERBS.md after changing src/data/verbs.ts
 ```
+
+[VERBS.md](VERBS.md) lists every verb and every sentence the app can ask. A test fails when it is out of date.
 
 The app icons in `public/` are generated from `public/icon.svg`:
 
@@ -27,6 +30,7 @@ npm run generate-pwa-assets
 | Path | Contents |
 |---|---|
 | `src/data/` | Verb table |
+| `scripts/` | Generator for VERBS.md |
 | `src/logic/` | DOM-free logic: sentence templates, questions, answer diagnosis, review list |
 | `src/ui/` | Rendering and event handling for each tab |
 | `verb_forms.html` | Original single-file prototype, kept for reference |

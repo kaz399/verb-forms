@@ -39,7 +39,12 @@ export const PATTERN_INFO: Record<Pattern, { name: string; rule: string }> = {
   ABC: { name: 'ABC型', rule: '原形・過去形・過去分詞が全部ちがう' },
 };
 
+/** Verbs are introduced in steps, most frequent first, so that a learner is not faced with all of them at once. */
+export const STEPS = [1, 2, 3] as const;
+export type Step = (typeof STEPS)[number];
+
 export type Verb = Record<FormKey, string> & {
+  step: Step;
   /** Japanese meaning. */
   ja: string;
   /** Words that follow the verb in generated sentences (object, place, etc.). */
@@ -61,7 +66,8 @@ export type VerbSource = Omit<Verb, 'regular' | 'pattern' | 'passive' | 'sentenc
   Partial<Pick<Verb, 'passive' | 'sentences' | 'note'>>;
 
 export function classifyPattern(v: Record<'base' | 'past' | 'pp', string>): Pattern {
-  if (v.past.endsWith('ed')) return 'REG';
+  // Checking the past form alone would count show / showed / shown as regular.
+  if (v.past.endsWith('ed') && v.past === v.pp) return 'REG';
   if (v.base === v.past && v.past === v.pp) return 'AAA';
   if (v.past === v.pp) return 'ABB';
   if (v.base === v.pp) return 'ABA';

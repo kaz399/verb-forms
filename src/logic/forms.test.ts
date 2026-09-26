@@ -8,13 +8,14 @@ describe('classifyPattern', () => {
     ['make', 'made', 'made', 'ABB'],
     ['come', 'came', 'come', 'ABA'],
     ['go', 'went', 'gone', 'ABC'],
+    ['show', 'showed', 'shown', 'ABC'],
   ] as const)('%s / %s / %s is %s', (base, past, pp, pattern) => {
     expect(classifyPattern({ base, past, pp })).toBe(pattern);
   });
 });
 
 describe('buildVerb', () => {
-  const src = { base: 'go', s3: 'goes', past: 'went', pp: 'gone', ing: 'going', ja: '行く', obj: 'home' };
+  const src = { step: 1 as const, base: 'go', s3: 'goes', past: 'went', pp: 'gone', ing: 'going', ja: '行く', obj: 'home' };
 
   it('fills optional fields with defaults', () => {
     expect(buildVerb(src)).toMatchObject({ passive: null, sentences: {}, note: '' });
