@@ -2,16 +2,19 @@
 // Copyright 2026 Yabe Kazuhiro
 
 import type { FormKey, Verb } from './logic/forms';
-import { chooseVoice } from './logic/voice';
+import { choosePlayfulVoice, chooseVoice, voiceForUtterance } from './logic/voice';
 
 export const canSpeak = 'speechSynthesis' in window;
 
 let voice: SpeechSynthesisVoice | undefined;
+let playfulVoice: SpeechSynthesisVoice | undefined;
 
 // Chrome returns an empty list until the voices have loaded, and only starts loading them on the
 // first getVoices() call, so request the list at startup and pick again once it arrives.
 function refreshVoice(): void {
-  voice = chooseVoice(speechSynthesis.getVoices());
+  const voices = speechSynthesis.getVoices();
+  voice = chooseVoice(voices);
+  playfulVoice = choosePlayfulVoice(voices);
 }
 if (canSpeak) {
   refreshVoice();
@@ -24,8 +27,9 @@ export function speak(v: Verb, key: FormKey): void {
   const text = v.base === 'read' && (key === 'past' || key === 'pp') ? 'red' : v[key];
   const utterance = new SpeechSynthesisUtterance(text);
   if (!voice) refreshVoice();
-  if (voice) utterance.voice = voice;
-  utterance.lang = voice?.lang ?? 'en-US';
+  const chosen = voiceForUtterance(voice, playfulVoice, Math.random());
+  if (chosen) utterance.voice = chosen;
+  utterance.lang = chosen?.lang ?? 'en-US';
   utterance.rate = 0.85;
   speechSynthesis.cancel();
   speechSynthesis.speak(utterance);

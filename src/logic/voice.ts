@@ -26,3 +26,21 @@ export function chooseVoice<V extends VoiceLike>(voices: readonly V[]): V | unde
   }
   return undefined;
 }
+
+/** How often the playful voice replaces the natural one. */
+export const PLAYFUL_VOICE_CHANCE = 0.1;
+
+// A novelty voice of macOS, used now and then purely for fun. It is absent on other systems.
+const PLAYFUL_VOICE = 'Albert';
+
+export function choosePlayfulVoice<V extends VoiceLike>(voices: readonly V[]): V | undefined {
+  return voices.find((v) => isUsEnglish(v) && v.name === PLAYFUL_VOICE);
+}
+
+/**
+ * Chooses the voice for one utterance: usually the natural one, sometimes the playful one.
+ * `roll` is a random number in [0, 1).
+ */
+export function voiceForUtterance<V>(natural: V | undefined, playful: V | undefined, roll: number): V | undefined {
+  return playful && roll < PLAYFUL_VOICE_CHANCE ? playful : natural;
+}
