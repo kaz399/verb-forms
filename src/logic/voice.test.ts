@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { choosePlayfulVoice, chooseVoice, PLAYFUL_VOICE_CHANCE, voiceForUtterance } from './voice';
+import {
+  choosePlayfulVoice,
+  chooseVoice,
+  MAX_VOLUME,
+  NATURAL_VOLUME_BESIDE_PLAYFUL,
+  PLAYFUL_VOICE_CHANCE,
+  voiceForUtterance,
+} from './voice';
 
 const voice = (name: string, lang = 'en-US') => ({ name, lang });
 
@@ -51,20 +58,29 @@ describe('choosePlayfulVoice', () => {
 });
 
 describe('voiceForUtterance', () => {
+  const playful = { voice: 'playful', volume: MAX_VOLUME };
+  const natural = { voice: 'natural', volume: NATURAL_VOLUME_BESIDE_PLAYFUL };
+
   it('uses the playful voice only when the roll is below the chance', () => {
-    expect(voiceForUtterance('natural', 'playful', 0)).toBe('playful');
-    expect(voiceForUtterance('natural', 'playful', PLAYFUL_VOICE_CHANCE - 0.001)).toBe('playful');
-    expect(voiceForUtterance('natural', 'playful', PLAYFUL_VOICE_CHANCE)).toBe('natural');
-    expect(voiceForUtterance('natural', 'playful', 0.999)).toBe('natural');
+    expect(voiceForUtterance('natural', 'playful', 0)).toEqual(playful);
+    expect(voiceForUtterance('natural', 'playful', PLAYFUL_VOICE_CHANCE - 0.001)).toEqual(playful);
+    expect(voiceForUtterance('natural', 'playful', PLAYFUL_VOICE_CHANCE)).toEqual(natural);
+    expect(voiceForUtterance('natural', 'playful', 0.999)).toEqual(natural);
   });
 
-  it('always uses the natural voice when there is no playful one', () => {
-    expect(voiceForUtterance('natural', undefined, 0)).toBe('natural');
+  it('plays the playful voice louder than the natural one', () => {
+    expect(playful.volume).toBeGreaterThan(natural.volume);
+    expect(playful.volume).toBe(1);
   });
 
-  it('uses the playful voice about one time in ten', () => {
+  it('keeps the natural voice at full volume when there is no playful one', () => {
+    expect(voiceForUtterance('natural', undefined, 0)).toEqual({ voice: 'natural', volume: MAX_VOLUME });
+    expect(voiceForUtterance('natural', undefined, 0.999)).toEqual({ voice: 'natural', volume: MAX_VOLUME });
+  });
+
+  it('uses the playful voice three times in ten', () => {
     const rolls = Array.from({ length: 1000 }, (_, i) => i / 1000);
-    const playful = rolls.filter((r) => voiceForUtterance('natural', 'playful', r) === 'playful').length;
-    expect(playful).toBe(1000 * PLAYFUL_VOICE_CHANCE);
+    const count = rolls.filter((r) => voiceForUtterance('natural', 'playful', r).voice === 'playful').length;
+    expect(count).toBe(300);
   });
 });

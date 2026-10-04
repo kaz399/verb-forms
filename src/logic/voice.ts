@@ -28,7 +28,12 @@ export function chooseVoice<V extends VoiceLike>(voices: readonly V[]): V | unde
 }
 
 /** How often the playful voice replaces the natural one. */
-export const PLAYFUL_VOICE_CHANCE = 0.1;
+export const PLAYFUL_VOICE_CHANCE = 0.3;
+
+// Speech volume cannot go above 1, so the playful voice is made to stand out by turning the
+// natural one down instead.
+export const MAX_VOLUME = 1;
+export const NATURAL_VOLUME_BESIDE_PLAYFUL = 0.5;
 
 // A novelty voice of macOS, used now and then purely for fun. It is absent on other systems.
 const PLAYFUL_VOICE = 'Albert';
@@ -38,9 +43,17 @@ export function choosePlayfulVoice<V extends VoiceLike>(voices: readonly V[]): V
 }
 
 /**
- * Chooses the voice for one utterance: usually the natural one, sometimes the playful one.
+ * Chooses the voice and volume for one utterance: usually the natural voice, sometimes the playful one.
  * `roll` is a random number in [0, 1).
  */
-export function voiceForUtterance<V>(natural: V | undefined, playful: V | undefined, roll: number): V | undefined {
-  return playful && roll < PLAYFUL_VOICE_CHANCE ? playful : natural;
+export function voiceForUtterance<V>(
+  natural: V | undefined,
+  playful: V | undefined,
+  roll: number,
+): { voice: V | undefined; volume: number } {
+  // Without a playful voice there is nothing to balance against, so the natural one stays at full volume.
+  if (!playful) return { voice: natural, volume: MAX_VOLUME };
+  return roll < PLAYFUL_VOICE_CHANCE
+    ? { voice: playful, volume: MAX_VOLUME }
+    : { voice: natural, volume: NATURAL_VOLUME_BESIDE_PLAYFUL };
 }

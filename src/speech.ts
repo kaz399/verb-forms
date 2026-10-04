@@ -28,8 +28,9 @@ export function speak(v: Verb, key: FormKey): void {
   const utterance = new SpeechSynthesisUtterance(text);
   if (!voice) refreshVoice();
   const chosen = voiceForUtterance(voice, playfulVoice, Math.random());
-  if (chosen) utterance.voice = chosen;
-  utterance.lang = chosen?.lang ?? 'en-US';
+  if (chosen.voice) utterance.voice = chosen.voice;
+  utterance.lang = chosen.voice?.lang ?? 'en-US';
+  utterance.volume = chosen.volume;
   utterance.rate = 0.85;
   speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
